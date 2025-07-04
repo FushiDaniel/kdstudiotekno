@@ -2,68 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-  }
-
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground;
-  }
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+  --radius: 0.5rem;
 }
 
-@layer components {
-  /* Ensure proper styling for shadcn/ui components */
-  .bg-card {
-    background-color: hsl(var(--card));
-  }
-  
-  .text-card-foreground {
-    color: hsl(var(--card-foreground));
-  }
-  
-  .text-muted-foreground {
-    color: hsl(var(--muted-foreground));
-  }
-  
-  .bg-muted {
-    background-color: hsl(var(--muted));
-  }
-  
-  .border-border {
-    border-color: hsl(var(--border));
-  }
-}
-
-/* Force light mode - ensure consistent styling */
 * {
   border-color: hsl(var(--border));
 }
 
-/* Override any dark mode styles */
+body {
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+/* Essential component styles */
+.bg-card {
+  background-color: hsl(var(--card));
+}
+
+.text-card-foreground {
+  color: hsl(var(--card-foreground));
+}
+
+.text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+.bg-muted {
+  background-color: hsl(var(--muted));
+}
+
+.border-border {
+  border-color: hsl(var(--border));
+}
+
+.bg-background {
+  background-color: hsl(var(--background));
+}
+
+.text-foreground {
+  color: hsl(var(--foreground));
+}
+
+/* Force light mode styling */
 body {
   color: #111827 !important;
   background: #ffffff !important;
@@ -73,11 +74,6 @@ h1, h2, h3, h4, h5, h6 {
   color: #111827 !important;
 }
 
-p, span, div, label {
-  color: #374151 !important;
-}
-
-/* Ensure text utilities work */
 .text-gray-900 { color: #111827 !important; }
 .text-gray-800 { color: #1f2937 !important; }
 .text-gray-700 { color: #374151 !important; }
@@ -86,30 +82,47 @@ p, span, div, label {
 .text-white { color: #ffffff !important; }
 .text-black { color: #000000 !important; }
 
-/* Button and interaction fixes */
-button {
-  color: inherit !important;
-}
-
 .bg-white {
   background-color: #ffffff !important;
-  color: #374151 !important;
 }
 
 .bg-gray-50 {
   background-color: #f9fafb !important;
 }
 
-/* Card styling to ensure visibility */
+.bg-gray-100 {
+  background-color: #f3f4f6 !important;
+}
+
+/* Ensure buttons work */
+button {
+  cursor: pointer;
+}
+
+/* Card shadows */
 .shadow-sm {
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
+.shadow {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Rounded corners */
 .rounded-lg {
   border-radius: 0.5rem;
 }
 
-/* Ensure proper focus and hover states */
+.rounded-md {
+  border-radius: 0.375rem;
+}
+
+/* Ensure focus states work */
+.focus-visible\:outline-none:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
 .focus-visible\:ring-2:focus-visible {
   --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
   --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);

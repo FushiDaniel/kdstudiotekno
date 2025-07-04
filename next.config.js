@@ -5,10 +5,6 @@ const nextConfig = {
     unoptimized: true,
   },
   reactStrictMode: true,
-  devIndicators: {
-    buildActivity: false,
-  },
-  output: 'standalone',
   swcMinify: true,
 }
 
