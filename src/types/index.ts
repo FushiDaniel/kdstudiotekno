@@ -14,9 +14,10 @@ export enum TaskStatus {
 
 export enum TaskPaymentStatus {
   NOT_STARTED = 'NOT_STARTED',
-  PROCESSING = 'PROCESSING',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
   COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED'
+  DENIED = 'DENIED'
 }
 
 export enum AvailabilityStatus {

@@ -136,7 +136,7 @@ class NotificationService {
     }
   }
 
-  // Combined notification method
+  // Combined notification method - Email-only approach
   async sendNotification(
     userId: string,
     userEmail: string,
@@ -154,24 +154,13 @@ class NotificationService {
       relatedId
     });
 
-    // Check if push notifications are supported and permission is granted
-    const canUsePushNotifications = this.isPushNotificationSupported() && 
-                                   this.getNotificationPermission() === 'granted';
-
-    if (canUsePushNotifications) {
-      try {
-        // Try to show local notification first
-        await this.showLocalNotification(title, message);
-        console.log('Local notification sent successfully');
-      } catch (error) {
-        console.warn('Local notification failed, falling back to email:', error);
-        // Fallback to email if push notification fails
-        await this.sendEmailNotification(userEmail, title, message);
-      }
-    } else {
-      // If push notifications aren't supported or permission denied, use email
-      console.log('Push notifications not available, using email fallback');
+    // Send email notification (primary method)
+    try {
       await this.sendEmailNotification(userEmail, title, message);
+      console.log('Email notification sent successfully to:', userEmail);
+    } catch (error) {
+      console.error('Failed to send email notification:', error);
+      // Log the failure but don't throw - in-app notification was already sent
     }
   }
 

@@ -16,6 +16,7 @@ import {
 import Dashboard from '@/components/dashboard/Dashboard';
 import TaskView from '@/components/tasks/TaskView';
 import AdminTaskView from '@/components/admin/AdminTaskView';
+import AdminPaymentView from '@/components/admin/AdminPaymentView';
 import ClockInView from '@/components/clockin/ClockInView';
 import PaymentView from '@/components/payment/PaymentView';
 import ProfileView from '@/components/profile/ProfileView';
@@ -48,7 +49,7 @@ export default function TabNavigation() {
       case 'clockin':
         return <ClockInView />;
       case 'payment':
-        return <PaymentView />;
+        return user?.isAdmin ? <AdminPaymentView /> : <PaymentView />;
       case 'directory':
         return <DirectoryView />;
       case 'profile':

@@ -59,8 +59,15 @@ export default function PaymentView() {
 
   // Filter tasks based on selected period
   const getFilteredTasks = () => {
-    const completedTasks = tasks.filter(t => t.status === TaskStatus.COMPLETED);
-    const pendingTasks = tasks.filter(t => t.status === TaskStatus.SUBMITTED);
+    // Only show tasks with COMPLETED payment status for earnings calculation
+    const completedTasks = tasks.filter(t => 
+      t.status === TaskStatus.COMPLETED && t.paymentStatus === TaskPaymentStatus.COMPLETED
+    );
+    // Show pending tasks (submitted but not yet approved) and approved payments pending
+    const pendingTasks = tasks.filter(t => 
+      t.status === TaskStatus.SUBMITTED || 
+      (t.status === TaskStatus.COMPLETED && t.paymentStatus === TaskPaymentStatus.PENDING)
+    );
 
     if (filterPeriod === 'current') {
       // Current month only
@@ -99,10 +106,10 @@ export default function PaymentView() {
   const totalEarnings = filteredCompleted.reduce((sum, task) => sum + task.amount, 0);
   const pendingEarnings = filteredPending.reduce((sum, task) => sum + task.amount, 0);
 
-  // Current month earnings for summary card
+  // Current month earnings for summary card - only COMPLETED payments count as earnings
   const currentMonthEarnings = tasks
     .filter(t => {
-      if (t.status !== TaskStatus.COMPLETED) return false;
+      if (t.status !== TaskStatus.COMPLETED || t.paymentStatus !== TaskPaymentStatus.COMPLETED) return false;
       const taskDate = t.completedAt || t.createdAt;
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
@@ -307,8 +314,12 @@ function PaymentTaskCard({ task }: PaymentTaskCardProps) {
     switch (status) {
       case TaskPaymentStatus.COMPLETED:
         return 'bg-green-100 text-green-800';
-      case TaskPaymentStatus.PROCESSING:
+      case TaskPaymentStatus.PENDING:
         return 'bg-yellow-100 text-yellow-800';
+      case TaskPaymentStatus.APPROVED:
+        return 'bg-blue-100 text-blue-800';
+      case TaskPaymentStatus.DENIED:
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -337,10 +348,14 @@ function PaymentTaskCard({ task }: PaymentTaskCardProps) {
             <div className="text-lg font-bold">{formatCurrency(task.amount)}</div>
             <div className="flex space-x-2">
               <Badge className={getTaskStatusColor(task.status)}>
-                {task.status}
+                {task.status === TaskStatus.COMPLETED ? 'Selesai' : task.status}
               </Badge>
               <Badge className={getPaymentStatusColor(task.paymentStatus)}>
-                {task.paymentStatus}
+                {task.paymentStatus === TaskPaymentStatus.PENDING ? 'Menunggu Kelulusan' :
+                 task.paymentStatus === TaskPaymentStatus.COMPLETED ? 'Bayaran Selesai' :
+                 task.paymentStatus === TaskPaymentStatus.APPROVED ? 'Diluluskan' :
+                 task.paymentStatus === TaskPaymentStatus.DENIED ? 'Ditolak' :
+                 'Belum Diproses'}
               </Badge>
             </div>
           </div>

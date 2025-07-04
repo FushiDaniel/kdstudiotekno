@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Task, TaskStatus } from '@/types';
+import { Task, TaskStatus, TaskPaymentStatus } from '@/types';
 import { collection, query, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -121,7 +121,11 @@ export default function AdminTaskView() {
           uid: user.uid,
           fullname: user.fullname,
           staffId: user.staffId
-        }
+        },
+        // Set payment status to PENDING when task is approved
+        ...(status === TaskStatus.COMPLETED && {
+          paymentStatus: TaskPaymentStatus.PENDING
+        })
       };
 
       await updateDoc(doc(db, 'tasks', selectedTask.id), updates);
