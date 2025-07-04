@@ -136,7 +136,7 @@ class NotificationService {
     }
   }
 
-  // Combined notification method - Email-only approach
+  // Combined notification method - FCM Push + Email fallback
   async sendNotification(
     userId: string,
     userEmail: string,
@@ -154,13 +154,58 @@ class NotificationService {
       relatedId
     });
 
-    // Send email notification (primary method)
+    // Try to send push notification first
+    try {
+      const pushSuccess = await this.sendPushNotification(userId, title, message, type, relatedId);
+      if (pushSuccess) {
+        console.log('Push notification sent successfully to user:', userId);
+        return; // Success, no need for email fallback
+      }
+    } catch (error) {
+      console.warn('Push notification failed, falling back to email:', error);
+    }
+
+    // Fallback to email notification
     try {
       await this.sendEmailNotification(userEmail, title, message);
       console.log('Email notification sent successfully to:', userEmail);
     } catch (error) {
-      console.error('Failed to send email notification:', error);
-      // Log the failure but don't throw - in-app notification was already sent
+      console.error('Both push and email notifications failed:', error);
+      // At least in-app notification was sent
+    }
+  }
+
+  // Send push notification via FCM
+  async sendPushNotification(
+    userId: string,
+    title: string,
+    message: string,
+    type: NotificationData['type'],
+    relatedId?: string
+  ): Promise<boolean> {
+    try {
+      const response = await fetch('/api/send-push-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          body: message,
+          userId,
+          data: {
+            type,
+            taskId: relatedId,
+            url: '/' // You can customize this based on notification type
+          }
+        })
+      });
+
+      const result = await response.json();
+      return result.success === true;
+    } catch (error) {
+      console.error('Failed to send push notification:', error);
+      return false;
     }
   }
 

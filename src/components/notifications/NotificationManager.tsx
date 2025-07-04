@@ -6,6 +6,7 @@ import { Notification } from '@/types';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { notificationService } from '@/lib/notifications';
+import { fcmService } from '@/lib/fcm';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -29,9 +30,27 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // Email-only notification system - no push notification initialization needed
+  // Initialize FCM push notifications
   useEffect(() => {
-    console.log('Notification system ready - using email notifications');
+    const initializeFCM = async () => {
+      try {
+        if (fcmService.isSupported()) {
+          const initialized = await fcmService.initialize();
+          if (initialized) {
+            console.log('FCM initialized successfully');
+            fcmService.setupForegroundMessageHandler();
+          } else {
+            console.log('FCM initialization failed, will use email fallback');
+          }
+        } else {
+          console.log('FCM not supported in this browser, will use email fallback');
+        }
+      } catch (error) {
+        console.error('FCM initialization error:', error);
+      }
+    };
+
+    initializeFCM();
   }, []);
 
   useEffect(() => {
