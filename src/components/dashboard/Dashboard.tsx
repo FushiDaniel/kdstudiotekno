@@ -10,7 +10,10 @@ import {
   CheckCircle, 
   XCircle, 
   FileText, 
-  DollarSign
+  DollarSign,
+  ChevronDown,
+  ChevronUp,
+  Calendar
 } from 'lucide-react';
 import { Task, TaskStatus } from '@/types';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -22,6 +25,7 @@ export default function Dashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTaskType, setSelectedTaskType] = useState<'active' | 'completed'>('active');
+  const [showPastEarnings, setShowPastEarnings] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -65,13 +69,58 @@ export default function Dashboard() {
     submitted: tasks.filter(t => t.status === TaskStatus.SUBMITTED).length,
   };
 
-  const totalEarnings = tasks
-    .filter(t => t.status === TaskStatus.COMPLETED)
+  // Current month earnings
+  const currentMonthEarnings = tasks
+    .filter(t => {
+      if (t.status !== TaskStatus.COMPLETED) return false;
+      const taskDate = t.completedAt || t.createdAt;
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      return taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;
+    })
     .reduce((sum, task) => sum + task.amount, 0);
 
   const pendingEarnings = tasks
     .filter(t => t.status === TaskStatus.SUBMITTED)
     .reduce((sum, task) => sum + task.amount, 0);
+
+  // Calculate past months earnings
+  const getMonthlyEarnings = () => {
+    const months = [];
+    const currentDate = new Date();
+    
+    for (let i = 1; i <= 6; i++) { // Show last 6 months
+      const monthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      const monthName = monthDate.toLocaleDateString('ms-MY', { 
+        month: 'long', 
+        year: 'numeric' 
+      });
+      
+      const monthEarnings = tasks
+        .filter(t => {
+          if (t.status !== TaskStatus.COMPLETED) return false;
+          const taskDate = t.completedAt || t.createdAt;
+          return taskDate.getMonth() === monthDate.getMonth() && 
+                 taskDate.getFullYear() === monthDate.getFullYear();
+        })
+        .reduce((sum, task) => sum + task.amount, 0);
+      
+      months.push({
+        name: monthName,
+        earnings: monthEarnings,
+        taskCount: tasks.filter(t => {
+          if (t.status !== TaskStatus.COMPLETED) return false;
+          const taskDate = t.completedAt || t.createdAt;
+          return taskDate.getMonth() === monthDate.getMonth() && 
+                 taskDate.getFullYear() === monthDate.getFullYear();
+        }).length
+      });
+    }
+    
+    return months;
+  };
+
+  const pastMonthsEarnings = getMonthlyEarnings();
 
   const activeTasks = tasks.filter(t => 
     t.status === TaskStatus.IN_PROGRESS || t.status === TaskStatus.NEEDS_REVISION
@@ -106,22 +155,68 @@ export default function Dashboard() {
             </div>
           </div>
 
-          Earnings Card
+          {/* Current Month Earnings Card */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-lg">Pendapatan Bulan Ini</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">Pendapatan Bulan Ini</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPastEarnings(!showPastEarnings)}
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Bulan Lepas
+                  {showPastEarnings ? (
+                    <ChevronUp className="h-4 w-4 ml-1" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 ml-1" />
+                  )}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Selesai</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalEarnings)}</p>
+                  <p className="text-2xl font-bold">{formatCurrency(currentMonthEarnings)}</p>
                 </div>
                 <div className="border-l border-gray-200 pl-6">
                   <p className="text-sm text-gray-600">Belum Selesai</p>
                   <p className="text-xl font-semibold text-gray-500">{formatCurrency(pendingEarnings)}</p>
                 </div>
               </div>
+              
+              {/* Past Months Earnings */}
+              {showPastEarnings && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h4 className="text-sm font-medium text-gray-700 mb-4">Pendapatan Bulan-Bulan Lepas</h4>
+                  <div className="space-y-3">
+                    {pastMonthsEarnings.map((month, index) => (
+                      <div key={index} className="flex items-center justify-between py-2">
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">{month.name}</p>
+                          <p className="text-xs text-gray-500">{month.taskCount} tugasan selesai</p>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(month.earnings)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Total past earnings */}
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-gray-700">Jumlah 6 Bulan Lepas</p>
+                      <p className="text-base font-bold text-gray-900">
+                        {formatCurrency(pastMonthsEarnings.reduce((sum, month) => sum + month.earnings, 0))}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

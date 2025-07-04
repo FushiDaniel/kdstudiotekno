@@ -48,24 +48,27 @@ self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
   
   const options = {
-    body: data.body || 'You have a new notification',
-    icon: '/icon-192x192.png',
-    badge: '/icon-192x192.png',
+    body: data.body || 'Anda mempunyai pemberitahuan baru',
+    icon: '/kdlogo.jpeg',
+    badge: '/kdlogo.jpeg',
     vibrate: [100, 50, 100],
+    tag: 'kdstudio-notification',
+    requireInteraction: false,
     data: {
       dateOfArrival: Date.now(),
-      primaryKey: 1
+      url: data.url || '/',
+      taskId: data.taskId || null
     },
     actions: [
       {
-        action: 'explore',
-        title: 'View',
-        icon: '/icon-192x192.png'
+        action: 'open',
+        title: 'Buka Aplikasi',
+        icon: '/kdlogo.jpeg'
       },
       {
         action: 'close',
-        title: 'Close',
-        icon: '/icon-192x192.png'
+        title: 'Tutup',
+        icon: '/kdlogo.jpeg'
       }
     ]
   };
@@ -79,9 +82,26 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('/')
-    );
+  if (event.action === 'close') {
+    return; // Just close the notification
   }
+  
+  // For 'open' action or clicking the notification body
+  const targetUrl = event.notification.data?.url || '/';
+  
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window' }).then((clientList) => {
+      // Check if there's already a window/tab open
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      
+      // If no window is open, open a new one
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
+  );
 });

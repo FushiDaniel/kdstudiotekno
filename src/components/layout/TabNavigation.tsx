@@ -67,7 +67,7 @@ export default function TabNavigation() {
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 relative">
                 <Image
-                  src="/kdstudiologo.jpeg"
+                  src="/kdlogo.jpeg"
                   alt="KDStudio Logo"
                   width={32}
                   height={32}

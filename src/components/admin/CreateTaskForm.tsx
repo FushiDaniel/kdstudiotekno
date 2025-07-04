@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TaskStatus, TaskPaymentStatus } from '@/types';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, getDocs, query } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { X, Plus } from 'lucide-react';
+import { notificationService } from '@/lib/notifications';
 
 interface CreateTaskFormProps {
   onClose: () => void;
@@ -69,6 +70,21 @@ export default function CreateTaskForm({ onClose, onTaskCreated }: CreateTaskFor
       };
 
       await addDoc(collection(db, 'tasks'), newTask);
+
+      // Fetch all users to notify about new task
+      try {
+        const usersSnapshot = await getDocs(query(collection(db, 'users')));
+        const allUsers = usersSnapshot.docs.map(doc => ({
+          userId: doc.id,
+          email: doc.data().email
+        }));
+
+        // Send notifications to all users
+        await notificationService.notifyNewTask(formData.name, allUsers);
+      } catch (notificationError) {
+        console.warn('Failed to send new task notifications:', notificationError);
+      }
+
       onTaskCreated?.();
       onClose();
     } catch (error) {

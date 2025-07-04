@@ -63,10 +63,12 @@ export default function LoginForm() {
       <div className="w-full max-w-md mx-auto space-y-8">
         {/* Logo Section */}
         <div className="text-center space-y-4">
-          <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
-            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">KD</span>
-            </div>
+          <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+            <img
+              src="/kdlogo.jpeg"
+              alt="KDStudio Logo"
+              className="w-16 h-16 object-cover rounded-full"
+            />
           </div>
           <div>
             <p className="text-lg text-gray-600">Selamat Datang</p>

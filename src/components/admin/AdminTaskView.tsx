@@ -13,6 +13,7 @@ import { Plus, Search, DollarSign, Clock, Users, X, CheckCircle, FileText } from
 import CreateTaskForm from './CreateTaskForm';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
+import { notificationService } from '@/lib/notifications';
 
 export default function AdminTaskView() {
   const { user } = useAuth();
@@ -131,6 +132,31 @@ export default function AdminTaskView() {
         reviewedAt: now // Convert Timestamp to Date for local state
       };
       setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
+
+      // Send notification to the task assignee
+      if (selectedTask.assignedTo) {
+        // Get user email - in a real app, you'd fetch this from users collection
+        const userEmail = selectedTask.assignedToName ? `${selectedTask.assignedToName.toLowerCase().replace(' ', '')}@email.com` : 'user@email.com';
+        
+        if (status === TaskStatus.COMPLETED) {
+          await notificationService.notifyTaskApproved(
+            selectedTask.assignedTo,
+            userEmail,
+            selectedTask.name,
+            formatCurrency(selectedTask.amount),
+            selectedTask.id
+          );
+        } else {
+          await notificationService.notifyTaskRejected(
+            selectedTask.assignedTo,
+            userEmail,
+            selectedTask.name,
+            feedbackNote || 'Sila semak komen admin.',
+            selectedTask.id
+          );
+        }
+      }
+      
       setSelectedTask(null);
       setFeedbackNote('');
     } catch (error) {
