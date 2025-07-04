@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   description: "Manage your tasks, track work hours, and monitor earnings with KDStudio",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon-192x192.png",
-    apple: "/icon-192x192.png",
+    icon: "/kdlogo.jpeg",
+    apple: "/kdlogo.jpeg",
   },
 };
 
@@ -33,7 +33,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-        <link rel="apple-touch-icon" href="/kdstudiologo.jpeg" />
+        <link rel="apple-touch-icon" href="/kdlogo.jpeg" />
       </head>
       <body className={inter.className}>
         <AuthProvider>

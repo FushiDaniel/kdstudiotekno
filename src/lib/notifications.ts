@@ -26,27 +26,50 @@ class NotificationService {
   // Initialize push notifications
   async initializePushNotifications(): Promise<boolean> {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.warn('Push messaging is not supported');
+      console.warn('Push messaging is not supported in this browser');
       return false;
     }
 
     try {
-      // Register service worker
-      this.swRegistration = await navigator.serviceWorker.register('/sw.js');
-      console.log('Service Worker registered successfully');
-
-      // Request notification permission
+      // Request notification permission first
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        console.warn('Notification permission denied');
+        console.warn('Notification permission denied by user');
         return false;
       }
 
+      // Register service worker
+      this.swRegistration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/'
+      });
+      
+      console.log('Service Worker registered successfully');
+
+      // Wait for service worker to be ready
+      await navigator.serviceWorker.ready;
+      
       return true;
     } catch (error) {
       console.error('Failed to initialize push notifications:', error);
       return false;
     }
+  }
+
+  // Check if push notifications are supported and enabled
+  isPushNotificationSupported(): boolean {
+    return (
+      'serviceWorker' in navigator &&
+      'PushManager' in window &&
+      'Notification' in window
+    );
+  }
+
+  // Get current notification permission status
+  getNotificationPermission(): NotificationPermission {
+    if ('Notification' in window) {
+      return Notification.permission;
+    }
+    return 'denied';
   }
 
   // Show local notification
@@ -131,12 +154,23 @@ class NotificationService {
       relatedId
     });
 
-    // Try to show local notification first
-    try {
-      await this.showLocalNotification(title, message);
-    } catch (error) {
-      console.warn('Local notification failed, falling back to email');
-      // Fallback to email if push notification fails
+    // Check if push notifications are supported and permission is granted
+    const canUsePushNotifications = this.isPushNotificationSupported() && 
+                                   this.getNotificationPermission() === 'granted';
+
+    if (canUsePushNotifications) {
+      try {
+        // Try to show local notification first
+        await this.showLocalNotification(title, message);
+        console.log('Local notification sent successfully');
+      } catch (error) {
+        console.warn('Local notification failed, falling back to email:', error);
+        // Fallback to email if push notification fails
+        await this.sendEmailNotification(userEmail, title, message);
+      }
+    } else {
+      // If push notifications aren't supported or permission denied, use email
+      console.log('Push notifications not available, using email fallback');
       await this.sendEmailNotification(userEmail, title, message);
     }
   }

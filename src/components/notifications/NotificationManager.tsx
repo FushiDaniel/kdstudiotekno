@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Notification } from '@/types';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { notificationService } from '@/lib/notifications';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -27,6 +28,24 @@ export function useNotifications() {
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  // Initialize notification service on mount
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      try {
+        const initialized = await notificationService.initializePushNotifications();
+        if (initialized) {
+          console.log('Push notifications initialized successfully');
+        } else {
+          console.log('Push notifications not available, will use email fallback');
+        }
+      } catch (error) {
+        console.error('Failed to initialize notifications:', error);
+      }
+    };
+
+    initializeNotifications();
+  }, []);
 
   useEffect(() => {
     if (!user) {

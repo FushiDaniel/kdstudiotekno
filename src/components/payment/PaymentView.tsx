@@ -4,16 +4,23 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Task, TaskStatus, TaskPaymentStatus } from '@/types';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { DollarSign, Calendar, CheckCircle, Clock, FileText } from 'lucide-react';
+import { DollarSign, Calendar, CheckCircle, Clock, FileText, Filter, ChevronDown } from 'lucide-react';
+
+type FilterPeriod = 'current' | 'all' | 'custom';
 
 export default function PaymentView() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterPeriod, setFilterPeriod] = useState<FilterPeriod>('current');
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -50,20 +57,78 @@ export default function PaymentView() {
     return () => unsubscribe();
   }, [user]);
 
-  const completedTasks = tasks.filter(t => t.status === TaskStatus.COMPLETED);
-  const pendingTasks = tasks.filter(t => t.status === TaskStatus.SUBMITTED);
-  
-  const totalEarnings = completedTasks.reduce((sum, task) => sum + task.amount, 0);
-  const pendingEarnings = pendingTasks.reduce((sum, task) => sum + task.amount, 0);
-  
-  const currentMonthEarnings = completedTasks
-    .filter(task => {
-      const taskDate = task.completedAt || task.createdAt;
+  // Filter tasks based on selected period
+  const getFilteredTasks = () => {
+    const completedTasks = tasks.filter(t => t.status === TaskStatus.COMPLETED);
+    const pendingTasks = tasks.filter(t => t.status === TaskStatus.SUBMITTED);
+
+    if (filterPeriod === 'current') {
+      // Current month only
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      
+      return {
+        completed: completedTasks.filter(task => {
+          const taskDate = task.completedAt || task.createdAt;
+          return taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;
+        }),
+        pending: pendingTasks.filter(task => {
+          const taskDate = task.submittedAt || task.createdAt;
+          return taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;
+        })
+      };
+    } else if (filterPeriod === 'custom') {
+      // Selected month and year
+      return {
+        completed: completedTasks.filter(task => {
+          const taskDate = task.completedAt || task.createdAt;
+          return taskDate.getMonth() === selectedMonth && taskDate.getFullYear() === selectedYear;
+        }),
+        pending: pendingTasks.filter(task => {
+          const taskDate = task.submittedAt || task.createdAt;
+          return taskDate.getMonth() === selectedMonth && taskDate.getFullYear() === selectedYear;
+        })
+      };
+    } else {
+      // All time
+      return { completed: completedTasks, pending: pendingTasks };
+    }
+  };
+
+  const { completed: filteredCompleted, pending: filteredPending } = getFilteredTasks();
+  const totalEarnings = filteredCompleted.reduce((sum, task) => sum + task.amount, 0);
+  const pendingEarnings = filteredPending.reduce((sum, task) => sum + task.amount, 0);
+
+  // Current month earnings for summary card
+  const currentMonthEarnings = tasks
+    .filter(t => {
+      if (t.status !== TaskStatus.COMPLETED) return false;
+      const taskDate = t.completedAt || t.createdAt;
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
       return taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;
     })
     .reduce((sum, task) => sum + task.amount, 0);
+
+  // Generate month options for dropdown
+  const getMonthOptions = () => {
+    const months = [];
+    const currentDate = new Date();
+    
+    // Get last 24 months
+    for (let i = 0; i < 24; i++) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      months.push({
+        value: date.getMonth(),
+        year: date.getFullYear(),
+        label: date.toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' })
+      });
+    }
+    
+    return months;
+  };
+
+  const monthOptions = getMonthOptions();
 
   if (loading) {
     return (
@@ -77,8 +142,78 @@ export default function PaymentView() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment & Gaji</h1>
-        <p className="text-gray-600">Pantau pendapatan dan status bayaran anda</p>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment & Gaji</h1>
+            <p className="text-gray-600">Pantau pendapatan dan status bayaran anda</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2"
+          >
+            <Filter className="h-4 w-4" />
+            Filter Tempoh
+            <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+          </Button>
+        </div>
+
+        {/* Filter Controls */}
+        {showFilters && (
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex gap-2">
+                  <Button
+                    variant={filterPeriod === 'current' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterPeriod('current')}
+                  >
+                    Bulan Ini
+                  </Button>
+                  <Button
+                    variant={filterPeriod === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterPeriod('all')}
+                  >
+                    Semua
+                  </Button>
+                  <Button
+                    variant={filterPeriod === 'custom' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterPeriod('custom')}
+                  >
+                    Pilih Bulan
+                  </Button>
+                </div>
+
+                {filterPeriod === 'custom' && (
+                  <div className="flex gap-2">
+                    <select
+                      value={`${selectedMonth}-${selectedYear}`}
+                      onChange={(e) => {
+                        const [month, year] = e.target.value.split('-').map(Number);
+                        setSelectedMonth(month);
+                        setSelectedYear(year);
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+                    >
+                      {monthOptions.map((option) => (
+                        <option key={`${option.value}-${option.year}`} value={`${option.value}-${option.year}`}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="text-sm text-gray-600">
+                  Menunjukkan: {filteredCompleted.length + filteredPending.length} tugasan
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -91,7 +226,13 @@ export default function PaymentView() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalEarnings)}</div>
             <p className="text-xs text-muted-foreground">
-              Dari {completedTasks.length} tugasan selesai
+              Dari {filteredCompleted.length} tugasan selesai
+              {filterPeriod !== 'all' && (
+                <span className="block">
+                  ({filterPeriod === 'current' ? 'Bulan ini' : 
+                    monthOptions.find(m => m.value === selectedMonth && m.year === selectedYear)?.label})
+                </span>
+              )}
             </p>
           </CardContent>
         </Card>
@@ -104,7 +245,13 @@ export default function PaymentView() {
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(pendingEarnings)}</div>
             <p className="text-xs text-muted-foreground">
-              Dari {pendingTasks.length} tugasan diserahkan
+              Dari {filteredPending.length} tugasan diserahkan
+              {filterPeriod !== 'all' && (
+                <span className="block">
+                  ({filterPeriod === 'current' ? 'Bulan ini' : 
+                    monthOptions.find(m => m.value === selectedMonth && m.year === selectedYear)?.label})
+                </span>
+              )}
             </p>
           </CardContent>
         </Card>
@@ -130,12 +277,14 @@ export default function PaymentView() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[...completedTasks, ...pendingTasks].length === 0 ? (
+            {[...filteredCompleted, ...filteredPending].length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                Tiada sejarah tugasan yang boleh dibayar
+                {filterPeriod === 'current' ? 'Tiada tugasan bulan ini' :
+                 filterPeriod === 'custom' ? `Tiada tugasan untuk ${monthOptions.find(m => m.value === selectedMonth && m.year === selectedYear)?.label}` :
+                 'Tiada sejarah tugasan yang boleh dibayar'}
               </div>
             ) : (
-              [...completedTasks, ...pendingTasks]
+              [...filteredCompleted, ...filteredPending]
                 .sort((a, b) => (b.completedAt || b.submittedAt || b.createdAt).getTime() - 
                                (a.completedAt || a.submittedAt || a.createdAt).getTime())
                 .map((task) => (
