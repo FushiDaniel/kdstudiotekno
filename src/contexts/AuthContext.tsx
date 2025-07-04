@@ -44,51 +44,88 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let redirectResultProcessed = false;
+    let mounted = true;
     
-    // Set persistence to LOCAL
-    setPersistence(auth, browserLocalPersistence).catch(console.error);
-
-    // Handle redirect result first - with better error handling for mobile
-    const handleRedirectResult = async () => {
+    const initializeAuth = async () => {
       try {
-        const result = await getRedirectResult(auth);
-        if (result?.user && !redirectResultProcessed) {
-          redirectResultProcessed = true;
-          console.log('Redirect result found, setting up user:', result.user.email);
-          await handleGoogleUserSetup(result.user, result);
-        }
+        // Set persistence to LOCAL with error handling
+        await setPersistence(auth, browserLocalPersistence);
+        console.log('Auth persistence set to LOCAL');
       } catch (error) {
-        console.error('Redirect sign-in error:', error);
-        // Don't block the auth state change even if redirect fails
+        console.warn('Failed to set auth persistence:', error);
+        // Continue anyway, this is not critical
+      }
+
+      // Check if we have a sign-in attempt flag
+      const signInAttempt = localStorage.getItem('googleSignInAttempt');
+      const hasAuthCallback = window.location.search.includes('code=') || 
+                             window.location.search.includes('state=') || 
+                             window.location.hash.includes('access_token');
+      
+      if (signInAttempt || hasAuthCallback) {
+        console.log('Detected potential OAuth callback or sign-in attempt, checking redirect result...');
+        try {
+          // Clear the attempt flag first
+          localStorage.removeItem('googleSignInAttempt');
+          
+          const result = await getRedirectResult(auth);
+          if (result?.user && mounted) {
+            console.log('Redirect result found, setting up user:', result.user.email);
+            await handleGoogleUserSetup(result.user, result);
+          } else if (hasAuthCallback) {
+            console.log('Auth callback detected but no redirect result - this is the storage partition issue');
+            // Clear the URL to prevent repeated attempts
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } catch (error) {
+          console.error('Redirect sign-in error:', error);
+          const errorMessage = (error as Error).message || '';
+          
+          if (errorMessage.includes('missing initial state') || errorMessage.includes('storage')) {
+            console.log('Storage partition error detected - clearing URL and showing error');
+            // Clear the problematic URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            // Show user-friendly message
+            alert('Login gagal kerana masalah teknikal. Sila cuba lagi dengan menggunakan browser yang berbeza atau mode incognito.');
+          }
+        }
       }
     };
 
-    handleRedirectResult();
+    initializeAuth();
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       console.log('Auth state changed:', firebaseUser?.email || 'No user');
+      
+      if (!mounted) return;
       
       if (firebaseUser) {
         setFirebaseUser(firebaseUser);
         
         try {
-          // Fetch user data from Firestore
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          // Fetch user data from Firestore with timeout
+          const userDocPromise = getDoc(doc(db, 'users', firebaseUser.uid));
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Firestore timeout')), 10000)
+          );
+          
+          const userDoc = await Promise.race([userDocPromise, timeoutPromise]) as any;
+          
           if (userDoc.exists()) {
             const userData = userDoc.data();
             setUser({
               uid: firebaseUser.uid,
-              fullname: userData.fullname || '',
+              fullname: userData.fullname || firebaseUser.displayName || '',
               email: userData.email || firebaseUser.email || '',
-              profileImageUrl: userData.profileImageUrl || '',
+              profileImageUrl: userData.profileImageUrl || firebaseUser.photoURL || '',
               isAdmin: userData.isAdmin || false,
               phoneNumber: userData.phoneNumber || '',
               bio: userData.bio || '',
               skills: userData.skills || [],
               availabilityStatus: userData.availabilityStatus || AvailabilityStatus.IDLE,
               employmentType: userData.employmentType || EmploymentType.FREELANCE,
-              staffId: userData.staffId || '',
+              staffId: userData.staffId || `FL${firebaseUser.uid.slice(-3)}`,
               bankName: userData.bankName || '',
               bankAccountNumber: userData.bankAccountNumber || '',
               homeAddress: userData.homeAddress || '',
@@ -129,7 +166,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -188,49 +228,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      // Better mobile detection
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const hasSmallScreen = window.innerWidth <= 768;
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      console.log('Starting Google sign-in...');
       
-      // Use redirect for mobile devices and iOS (popups are problematic on mobile)
-      const shouldUseRedirect = isMobile || isIOS || (hasSmallScreen && isTouchDevice);
-      
-      console.log('Google Sign-in - Device info:', {
-        isMobile,
-        isIOS,
-        hasSmallScreen,
-        isTouchDevice,
-        shouldUseRedirect,
-        userAgent: navigator.userAgent
-      });
-      
-      if (shouldUseRedirect) {
-        console.log('Using redirect for mobile/touch device');
-        // For redirect, we don't await as it will redirect the page
-        await signInWithRedirect(auth, googleProvider);
-        // The redirect will handle the rest, no need to return anything
-      } else {
-        // Use popup for desktop
-        console.log('Using popup for desktop device');
-        try {
-          const result = await signInWithPopup(auth, googleProvider);
-          if (result?.user) {
-            console.log('Popup sign-in successful:', result.user.email);
-            await handleGoogleUserSetup(result.user, result);
-          }
-        } catch (popupError) {
-          console.error('Popup sign-in failed:', popupError);
-          const error = popupError as { code?: string; message?: string };
+      // Always try popup first for all devices
+      // This avoids the sessionStorage/storage partition issues entirely
+      try {
+        console.log('Attempting popup sign-in...');
+        const result = await signInWithPopup(auth, googleProvider);
+        if (result?.user) {
+          console.log('Popup sign-in successful:', result.user.email);
+          await handleGoogleUserSetup(result.user, result);
+          return;
+        }
+      } catch (popupError) {
+        console.error('Popup sign-in failed:', popupError);
+        const error = popupError as { code?: string; message?: string };
+        
+        // Only use redirect as last resort and with better handling
+        if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+          console.log('Popup blocked/closed, trying redirect...');
           
-          // If popup is blocked or closed, fallback to redirect
-          if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
-            console.log('Popup blocked/closed, falling back to redirect');
-            await signInWithRedirect(auth, googleProvider);
-          } else {
-            throw popupError;
+          // Clear any existing session storage that might cause issues
+          try {
+            sessionStorage.clear();
+            localStorage.removeItem('firebase:authUser:AIzaSyBGqOsOhjB6KskPI9me3mdbgqlrtMjkSXA:[DEFAULT]');
+          } catch (storageError) {
+            console.warn('Could not clear storage:', storageError);
           }
+          
+          // Set a flag to track redirect attempt
+          localStorage.setItem('googleSignInAttempt', JSON.stringify({
+            timestamp: Date.now(),
+            userAgent: navigator.userAgent
+          }));
+          
+          await signInWithRedirect(auth, googleProvider);
+        } else {
+          throw popupError;
         }
       }
     } catch (error) {

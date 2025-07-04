@@ -21,10 +21,13 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
-// Initialize Google Auth Provider
+// Initialize Google Auth Provider with mobile-friendly settings
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
-  prompt: 'select_account'
+  prompt: 'select_account',
+  // Add additional parameters for better mobile compatibility
+  access_type: 'online',
+  include_granted_scopes: 'true'
 });
 
 // Initialize messaging (only on client side)

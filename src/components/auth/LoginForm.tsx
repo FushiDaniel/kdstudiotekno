@@ -40,30 +40,20 @@ export default function LoginForm() {
     setError('');
 
     try {
-      // Check if it's a mobile device
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const hasSmallScreen = window.innerWidth <= 768;
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      const shouldUseRedirect = isMobile || isIOS || (hasSmallScreen && isTouchDevice);
-      
-      console.log('LoginForm - Starting Google login, shouldUseRedirect:', shouldUseRedirect);
-      
-      if (shouldUseRedirect) {
-        // For mobile redirect, show a message and don't reset loading state
-        // as the page will redirect
-        console.log('Mobile detected, redirecting to Google...');
-      }
-      
+      console.log('LoginForm - Starting Google login...');
       await signInWithGoogle();
-      
-      // Only reset loading state if we're not redirecting
-      if (!shouldUseRedirect) {
-        setIsLoading(false);
-      }
+      // Loading state will be managed by the auth context
     } catch (error: unknown) {
       console.error('Google login error:', error);
-      setError((error as Error).message || 'Ralat log masuk dengan Google');
+      const errorMessage = (error as Error).message || '';
+      
+      if (errorMessage.includes('missing initial state') || errorMessage.includes('storage')) {
+        setError('Masalah teknikal dengan browser. Cuba guna mode incognito atau browser lain.');
+      } else if (errorMessage.includes('popup')) {
+        setError('Popup disekat. Cuba aktifkan popup atau guna browser lain.');
+      } else {
+        setError('Ralat log masuk dengan Google. Sila cuba lagi.');
+      }
       setIsLoading(false);
     }
   };
@@ -181,10 +171,7 @@ export default function LoginForm() {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
-                      ? 'Mengalihkan ke Google...' 
-                      : 'Logging in...'
-                    }
+                    Sedang log masuk...
                   </>
                 ) : (
                   <>
