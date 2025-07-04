@@ -10,7 +10,7 @@ import { Task, TaskStatus } from '@/types';
 import { doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { ArrowLeft, FileText, Send } from 'lucide-react';
+import { ArrowLeft, Send } from 'lucide-react';
 
 interface TaskDetailViewProps {
   task: Task;

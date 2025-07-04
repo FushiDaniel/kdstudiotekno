@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Task, TaskStatus } from '@/types';
-import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Clock, DollarSign, FileText, CheckCircle } from 'lucide-react';

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Task, TaskStatus } from '@/types';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Plus, Search, DollarSign, Clock, Users, X, CheckCircle, FileText } from 'lucide-react';
@@ -382,7 +382,7 @@ interface AdminTaskCardProps {
   onTaskUpdated: (task: Task) => void;
 }
 
-function AdminTaskCard({ task, onViewDetail, onTaskUpdated }: AdminTaskCardProps) {
+function AdminTaskCard({ task, onViewDetail }: AdminTaskCardProps) {
   const getStatusBadge = (status: TaskStatus) => {
     switch (status) {
       case TaskStatus.COMPLETED:

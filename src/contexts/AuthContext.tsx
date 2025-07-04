@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleGoogleUserSetup = async (user: FirebaseUser, result: any) => {
+  const handleGoogleUserSetup = async (user: FirebaseUser, _result: unknown) => {
     // Check if user exists
     const userDoc = await getDoc(doc(db, 'users', user.uid));
     
@@ -176,7 +176,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Google sign-in error:', error);
         // Fallback to redirect if popup fails
-        if ((error as any).code === 'auth/popup-blocked') {
+        if ((error as { code?: string }).code === 'auth/popup-blocked') {
           console.log('Popup blocked, falling back to redirect');
           await signInWithRedirect(auth, googleProvider);
         } else {

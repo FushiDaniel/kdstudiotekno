@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Task, TaskStatus, TaskPaymentStatus } from '@/types';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { DollarSign, Calendar, CheckCircle, Clock, FileText } from 'lucide-react';
@@ -64,28 +64,6 @@ export default function PaymentView() {
       return taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;
     })
     .reduce((sum, task) => sum + task.amount, 0);
-
-  const getPaymentStatusColor = (status: TaskPaymentStatus) => {
-    switch (status) {
-      case TaskPaymentStatus.COMPLETED:
-        return 'bg-green-100 text-green-800';
-      case TaskPaymentStatus.PENDING:
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getTaskStatusColor = (status: TaskStatus) => {
-    switch (status) {
-      case TaskStatus.COMPLETED:
-        return 'bg-green-100 text-green-800';
-      case TaskStatus.SUBMITTED:
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   if (loading) {
     return (
@@ -180,7 +158,7 @@ function PaymentTaskCard({ task }: PaymentTaskCardProps) {
     switch (status) {
       case TaskPaymentStatus.COMPLETED:
         return 'bg-green-100 text-green-800';
-      case TaskPaymentStatus.PENDING:
+      case TaskPaymentStatus.PROCESSING:
         return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';

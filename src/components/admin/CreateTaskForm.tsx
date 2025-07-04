@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Task, TaskStatus, TaskPaymentStatus } from '@/types';
+import { TaskStatus, TaskPaymentStatus } from '@/types';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { X, Plus } from 'lucide-react';

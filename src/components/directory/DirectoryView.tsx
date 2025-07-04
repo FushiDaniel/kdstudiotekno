@@ -58,7 +58,7 @@ export default function DirectoryView() {
           try {
             const imageRef = ref(storage, `users/${doc.id}/profile.jpg`);
             profileImageUrl = await getDownloadURL(imageRef);
-          } catch (error) {
+          } catch {
             console.log('No profile image found for user:', doc.id);
           }
         }

@@ -3,7 +3,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Notification } from '@/types';
-import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface NotificationContextType {

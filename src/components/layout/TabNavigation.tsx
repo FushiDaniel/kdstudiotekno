@@ -25,7 +25,7 @@ import Image from 'next/image';
 
 export default function TabNavigation() {
   const { user } = useAuth();
-  const { unreadCount, createSampleNotifications } = useNotifications();
+  const { unreadCount } = useNotifications();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showNotifications, setShowNotifications] = useState(false);
   const [isProfileIncomplete] = useState(false); // This should check profile completeness

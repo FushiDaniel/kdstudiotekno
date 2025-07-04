@@ -8,7 +8,7 @@ import { ClockInRecord } from '@/types';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatTime, formatDate } from '@/lib/utils';
-import { Clock, Play, Square, Calendar, MapPin } from 'lucide-react';
+import { Play, Square, Calendar, MapPin } from 'lucide-react';
 
 export default function ClockInView() {
   const { user } = useAuth();

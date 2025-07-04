@@ -10,11 +10,10 @@ import {
   CheckCircle, 
   XCircle, 
   FileText, 
-  DollarSign,
-  MoreHorizontal 
+  DollarSign
 } from 'lucide-react';
 import { Task, TaskStatus } from '@/types';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
@@ -81,21 +80,6 @@ export default function Dashboard() {
   const completedTasks = tasks.filter(t => 
     t.status === TaskStatus.COMPLETED || t.status === TaskStatus.SUBMITTED
   );
-
-  const getStatusColor = (status: TaskStatus) => {
-    switch (status) {
-      case TaskStatus.COMPLETED:
-        return 'bg-green-100 text-green-800';
-      case TaskStatus.IN_PROGRESS:
-        return 'bg-blue-100 text-blue-800';
-      case TaskStatus.NEEDS_REVISION:
-        return 'bg-red-100 text-red-800';
-      case TaskStatus.SUBMITTED:
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   if (loading) {
     return (
