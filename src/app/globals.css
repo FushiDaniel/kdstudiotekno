@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 222.2 47.4% 11.2%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 222.2 84% 4.9%;
+  --radius: 0.5rem;
+}
+
+/* Force light mode - dark mode disabled for now */
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  color: #111827 !important;
+  background: #ffffff !important;
+}
+
+/* Force visible text colors */
+* {
+  color: inherit;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #111827 !important;
+}
+
+p, span, div, label {
+  color: #374151 !important;
+}
+
+/* Text utility classes */
+.text-gray-900 { color: #111827 !important; }
+.text-gray-800 { color: #1f2937 !important; }
+.text-gray-700 { color: #374151 !important; }
+.text-gray-600 { color: #4b5563 !important; }
+.text-gray-500 { color: #6b7280 !important; }
+.text-white { color: #ffffff !important; }
+.text-black { color: #000000 !important; }
+
+/* Button fixes */
+button {
+  color: inherit !important;
+}
+
+/* Ensure buttons are visible */
+.bg-white {
+  background-color: #ffffff !important;
+  color: #374151 !important;
+}
+
+/* Card and background fixes */
+.bg-gray-50 {
+  background-color: #f9fafb !important;
+}
