@@ -88,7 +88,13 @@ export default function ClockInView() {
       );
 
       if (existingActive) {
-        throw new Error('You already have an active session');
+        throw new Error('Anda sudah mempunyai sesi aktif');
+      }
+
+      // Check daily session limit (2 sessions per day)
+      const todayRecords = clockInRecords.filter(record => record.date === today);
+      if (todayRecords.length >= 2) {
+        throw new Error('Had 2 sesi sehari telah dicapai');
       }
 
       const newRecord = {
@@ -119,12 +125,20 @@ export default function ClockInView() {
       const totalMinutes = Math.floor((now.getTime() - clockInTime.getTime()) / (1000 * 60));
 
       if (totalMinutes < 1) {
-        throw new Error('Session duration too short');
+        throw new Error('Tempoh sesi terlalu singkat');
+      }
+
+      // Check session duration limit (2 hours 30 minutes = 150 minutes)
+      const maxSessionMinutes = 150;
+      const actualMinutes = Math.min(totalMinutes, maxSessionMinutes);
+
+      if (totalMinutes > maxSessionMinutes) {
+        alert(`Sesi melebihi had masa 2 jam 30 minit. Masa yang direkodkan: ${formatDuration(actualMinutes)}`);
       }
 
       await updateDoc(doc(db, 'clockInRecords', activeSession.id), {
         clockOutTime: Timestamp.fromDate(now),
-        totalMinutes: totalMinutes,
+        totalMinutes: actualMinutes,
       });
     } catch (error) {
       console.error('Error clocking out:', error);
@@ -189,7 +203,7 @@ export default function ClockInView() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Clock In / Clock Out</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Daftar Masuk / Keluar</h1>
         <p className="text-gray-600">Jejak masa kerja anda</p>
       </div>
 
@@ -199,6 +213,10 @@ export default function ClockInView() {
           <h2 className="text-lg font-semibold mb-2">Sesi Hari Ini</h2>
           <div className="text-4xl font-bold text-gray-900">
             {getTodayTotalMinutes() > 0 ? formatDuration(getTodayTotalMinutes()) : '0j 0m'}
+          </div>
+          <div className="flex justify-between text-sm text-gray-600 mt-2">
+            <span>Sesi: {clockInRecords.filter(r => r.date === new Date().toISOString().split('T')[0]).length}/2</span>
+            <span>Had: 5j 0m</span>
           </div>
         </CardContent>
       </Card>
@@ -217,19 +235,24 @@ export default function ClockInView() {
 
           {activeSession ? (
             <div className="space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <div className={`${getCurrentSessionDuration() > 120 ? 'bg-orange-50 border-orange-200' : 'bg-green-50 border-green-200'} border rounded-lg p-3`}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs text-green-800">Clock In:</p>
-                    <p className="font-semibold text-green-900">
+                    <p className={`text-xs ${getCurrentSessionDuration() > 120 ? 'text-orange-800' : 'text-green-800'}`}>Masuk:</p>
+                    <p className={`font-semibold ${getCurrentSessionDuration() > 120 ? 'text-orange-900' : 'text-green-900'}`}>
                       {formatTimeWithPeriod(activeSession.clockInTime)}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-xs text-green-800">Tempoh Masa:</p>
-                    <p className="font-semibold text-green-900">
+                    <p className={`text-xs ${getCurrentSessionDuration() > 120 ? 'text-orange-800' : 'text-green-800'}`}>Tempoh Masa:</p>
+                    <p className={`font-semibold ${getCurrentSessionDuration() > 120 ? 'text-orange-900' : 'text-green-900'}`}>
                       {formatDuration(getCurrentSessionDuration())}
                     </p>
+                    {getCurrentSessionDuration() > 120 && (
+                      <p className="text-xs text-orange-600 mt-1">
+                        Had: 2j 30m
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -241,7 +264,7 @@ export default function ClockInView() {
                 disabled={loading}
               >
                 <Square className="h-4 w-4 mr-2" />
-                {loading ? 'Processing...' : 'Clock Out'}
+                {loading ? 'Memproses...' : 'Daftar Keluar'}
               </Button>
             </div>
           ) : (
@@ -251,7 +274,7 @@ export default function ClockInView() {
               disabled={loading}
             >
               <Play className="h-4 w-4 mr-2" />
-              {loading ? 'Processing...' : 'Clock In'}
+              {loading ? 'Memproses...' : 'Daftar Masuk'}
             </Button>
           )}
         </CardContent>
@@ -276,12 +299,12 @@ export default function ClockInView() {
                 </div>
                 <div className="text-right">
                   <div className="text-sm">
-                    <span>In: </span>
+                    <span>Masuk: </span>
                     <span className="font-medium">{formatTimeWithPeriod(record.clockInTime)}</span>
                   </div>
                   {record.clockOutTime && (
                     <div className="text-sm">
-                      <span>Out: </span>
+                      <span>Keluar: </span>
                       <span className="font-medium">{formatTimeWithPeriod(record.clockOutTime)}</span>
                     </div>
                   )}

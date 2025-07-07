@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { AvailabilityStatus } from '@/types';
 import { 
   Mail, 
   Phone, 
@@ -30,6 +31,44 @@ export default function ProfileView() {
     bio: user?.bio || ''
   });
   const [saving, setSaving] = useState(false);
+
+  const handleStatusChange = async (newStatus: AvailabilityStatus) => {
+    try {
+      await updateUser({ availabilityStatus: newStatus });
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
+
+  const getStatusColor = (status: AvailabilityStatus) => {
+    switch (status) {
+      case AvailabilityStatus.DALAM_TALIAN:
+        return 'bg-green-100 text-green-800';
+      case AvailabilityStatus.WORKING:
+        return 'bg-blue-100 text-blue-800';
+      case AvailabilityStatus.BREAK:
+        return 'bg-yellow-100 text-yellow-800';
+      case AvailabilityStatus.TIDAK_AKTIF:
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusText = (status: AvailabilityStatus) => {
+    switch (status) {
+      case AvailabilityStatus.DALAM_TALIAN:
+        return 'Dalam Talian';
+      case AvailabilityStatus.WORKING:
+        return 'Sedang Bekerja';
+      case AvailabilityStatus.BREAK:
+        return 'Rehat';
+      case AvailabilityStatus.TIDAK_AKTIF:
+        return 'Tidak Aktif';
+      default:
+        return 'Tidak Diketahui';
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -90,9 +129,9 @@ export default function ProfileView() {
           <Card>
             <CardContent className="p-6 text-center">
               <div className="w-24 h-24 mx-auto mb-4">
-                {user?.photoURL ? (
+                {user?.profileImageUrl ? (
                   <Image
-                    src={user.photoURL}
+                    src={user.profileImageUrl}
                     alt={user?.fullname || 'Profile'}
                     width={96}
                     height={96}
@@ -110,9 +149,24 @@ export default function ProfileView() {
                 {user?.fullname || 'Nama Belum Disetkan'}
               </h2>
               <p className="text-gray-600 mb-2">{user?.staffId}</p>
-              <Badge variant="secondary" className="mb-4">
+              <Badge variant="secondary" className="mb-2">
                 {user?.employmentType}
               </Badge>
+              
+              {/* Status Dropdown */}
+              <div className="mb-4">
+                <label className="block text-xs text-gray-600 mb-1">Status</label>
+                <select
+                  value={user?.availabilityStatus || AvailabilityStatus.TIDAK_AKTIF}
+                  onChange={(e) => handleStatusChange(e.target.value as AvailabilityStatus)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(user?.availabilityStatus || AvailabilityStatus.TIDAK_AKTIF)}`}
+                >
+                  <option value={AvailabilityStatus.DALAM_TALIAN}>Dalam Talian</option>
+                  <option value={AvailabilityStatus.WORKING}>Sedang Bekerja</option>
+                  <option value={AvailabilityStatus.BREAK}>Rehat</option>
+                  <option value={AvailabilityStatus.TIDAK_AKTIF}>Tidak Aktif</option>
+                </select>
+              </div>
               
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex items-center justify-center">
@@ -139,7 +193,7 @@ export default function ProfileView() {
               {!isEditing ? (
                 <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
                   <Edit3 className="h-4 w-4 mr-2" />
-                  Edit
+                  Ubah
                 </Button>
               ) : (
                 <div className="flex space-x-2">

@@ -15,7 +15,7 @@ import {
   ChevronUp,
   Calendar
 } from 'lucide-react';
-import { Task, TaskStatus } from '@/types';
+import { Task, TaskStatus, TaskPaymentStatus } from '@/types';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -69,10 +69,10 @@ export default function Dashboard() {
     submitted: tasks.filter(t => t.status === TaskStatus.SUBMITTED).length,
   };
 
-  // Current month earnings
+  // Current month earnings - only count COMPLETED payments
   const currentMonthEarnings = tasks
     .filter(t => {
-      if (t.status !== TaskStatus.COMPLETED) return false;
+      if (t.status !== TaskStatus.COMPLETED || t.paymentStatus !== TaskPaymentStatus.COMPLETED) return false;
       const taskDate = t.completedAt || t.createdAt;
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
@@ -98,7 +98,7 @@ export default function Dashboard() {
       
       const monthEarnings = tasks
         .filter(t => {
-          if (t.status !== TaskStatus.COMPLETED) return false;
+          if (t.status !== TaskStatus.COMPLETED || t.paymentStatus !== TaskPaymentStatus.COMPLETED) return false;
           const taskDate = t.completedAt || t.createdAt;
           return taskDate.getMonth() === monthDate.getMonth() && 
                  taskDate.getFullYear() === monthDate.getFullYear();
@@ -109,7 +109,7 @@ export default function Dashboard() {
         name: monthName,
         earnings: monthEarnings,
         taskCount: tasks.filter(t => {
-          if (t.status !== TaskStatus.COMPLETED) return false;
+          if (t.status !== TaskStatus.COMPLETED || t.paymentStatus !== TaskPaymentStatus.COMPLETED) return false;
           const taskDate = t.completedAt || t.createdAt;
           return taskDate.getMonth() === monthDate.getMonth() && 
                  taskDate.getFullYear() === monthDate.getFullYear();

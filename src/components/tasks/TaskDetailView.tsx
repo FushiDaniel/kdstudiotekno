@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Task, TaskStatus } from '@/types';
-import { doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { Task, TaskStatus, TaskMessage } from '@/types';
+import { doc, updateDoc, Timestamp, collection, query, where, onSnapshot, addDoc, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, MessageCircle, Users } from 'lucide-react';
 
 interface TaskDetailViewProps {
   task: Task;
@@ -22,6 +22,54 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
   const { user } = useAuth();
   const [submissionNote, setSubmissionNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [messages, setMessages] = useState<TaskMessage[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+
+  // Listen for messages
+  useEffect(() => {
+    if (!task.id) return;
+
+    const q = query(
+      collection(db, 'taskMessages'),
+      where('taskId', '==', task.id),
+      orderBy('timestamp', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const taskMessages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate() || new Date()
+      })) as TaskMessage[];
+      
+      setMessages(taskMessages);
+    });
+
+    return () => unsubscribe();
+  }, [task.id]);
+
+  const handleSendMessage = async () => {
+    if (!user || !newMessage.trim()) return;
+
+    setIsSendingMessage(true);
+    try {
+      await addDoc(collection(db, 'taskMessages'), {
+        taskId: task.id,
+        senderId: user.uid,
+        senderName: user.fullname,
+        message: newMessage.trim(),
+        timestamp: Timestamp.fromDate(new Date())
+      });
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Gagal menghantar mesej. Sila cuba lagi.');
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!user || (task.status !== TaskStatus.IN_PROGRESS && task.status !== TaskStatus.NEEDS_REVISION)) return;
@@ -108,10 +156,90 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
               </Button>
               <CardTitle className="text-2xl font-bold text-gray-900">Detail Tugasan</CardTitle>
             </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowChat(!showChat)}
+                className="flex items-center gap-2"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Chat
+                {messages.length > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {messages.length}
+                  </Badge>
+                )}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         
         <CardContent className="space-y-6 p-6">
+          {showChat && (
+            <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Chat Tugasan
+              </h3>
+              
+              <div className="space-y-4 mb-4 max-h-60 overflow-y-auto">
+                {messages.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">
+                    Belum ada mesej. Mulakan perbualan!
+                  </p>
+                ) : (
+                  messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex ${message.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-xs px-4 py-2 rounded-lg ${
+                          message.senderId === user?.uid
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-200 text-gray-800'
+                        }`}
+                      >
+                            <p className="text-sm font-medium mb-1">{message.senderName}</p>
+                        <p className="text-sm">{message.message}</p>
+                        <p className="text-xs opacity-75 mt-1">
+                          {message.timestamp.toLocaleTimeString('ms-MY', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            day: '2-digit',
+                            month: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              <div className="flex gap-2">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Taip mesej anda..."
+                  className="flex-1"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() || isSendingMessage}
+                  size="sm"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Nama Tugasan</h3>
             <p className="text-gray-700">{task.name}</p>

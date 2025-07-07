@@ -22,8 +22,10 @@ export enum TaskPaymentStatus {
 
 export enum AvailabilityStatus {
   IDLE = "idle",
-  WORKING = "working",
-  BREAK = "break"
+  WORKING = "working", 
+  BREAK = "break",
+  DALAM_TALIAN = "dalam_talian",
+  TIDAK_AKTIF = "tidak_aktif"
 }
 
 export interface User {
