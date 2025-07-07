@@ -349,11 +349,61 @@ function PaymentTaskCard({ task, onApprove, onDeny, isProcessing, getPaymentStat
                 <span>Selesai: {formatDate(task.completedAt || task.reviewedAt || task.createdAt)}</span>
               </div>
             </div>
+            
+            {/* User Bank Details for Admin */}
+            {assignedUser && (assignedUser.bankName || assignedUser.bankAccountNumber) && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start">
+                  <CreditCard className="h-4 w-4 text-blue-600 mr-2 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900 mb-2">Maklumat Bank Pengguna:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-blue-700 font-medium">Nama: </span>
+                        <span className="text-blue-800">{assignedUser.fullname}</span>
+                      </div>
+                      {assignedUser.bankName && (
+                        <div>
+                          <span className="text-blue-700 font-medium">Bank: </span>
+                          <span className="text-blue-800">{assignedUser.bankName}</span>
+                        </div>
+                      )}
+                      {assignedUser.bankAccountNumber && (
+                        <div className="sm:col-span-2">
+                          <span className="text-blue-700 font-medium">No. Akaun: </span>
+                          <span className="text-blue-800 font-mono">{assignedUser.bankAccountNumber}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {assignedUser && !assignedUser.bankName && !assignedUser.bankAccountNumber && (
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start">
+                  <CreditCard className="h-4 w-4 text-yellow-600 mr-2 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-yellow-800">Amaran:</p>
+                    <p className="text-sm text-yellow-700">Pengguna belum mengisi maklumat bank. Sila minta pengguna kemaskini profil mereka.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           
           <div className="text-right ml-6">
             <div className="text-2xl font-bold text-gray-900 mb-2">
               {formatCurrency(task.amount)}
+              {task.originalAmount && task.originalAmount !== task.amount && (
+                <div className="text-sm text-red-600 font-normal">
+                  Asal: <span className="line-through">{formatCurrency(task.originalAmount)}</span>
+                  <span className="ml-2 bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+                    Penalti Dikenakan
+                  </span>
+                </div>
+              )}
             </div>
             
             {task.paymentStatus === TaskPaymentStatus.PENDING && (

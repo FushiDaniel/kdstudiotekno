@@ -35,6 +35,7 @@ export interface User {
   profileImageUrl?: string;
   photoURL?: string;
   isAdmin: boolean;
+  isApproved: boolean;
   phoneNumber: string;
   bio: string;
   skills: string[];
@@ -53,6 +54,7 @@ export interface Task {
   name: string;
   description: string;
   amount: number;
+  originalAmount?: number;
   deadline: Date;
   status: TaskStatus;
   paymentStatus: TaskPaymentStatus;

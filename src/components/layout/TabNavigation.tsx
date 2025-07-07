@@ -11,17 +11,20 @@ import {
   CreditCard, 
   User, 
   Users,
-  Bell 
+  Bell,
+  UserCheck 
 } from 'lucide-react';
 import Dashboard from '@/components/dashboard/Dashboard';
 import TaskView from '@/components/tasks/TaskView';
 import AdminTaskView from '@/components/admin/AdminTaskView';
 import AdminPaymentView from '@/components/admin/AdminPaymentView';
+import AdminApprovalView from '@/components/admin/AdminApprovalView';
 import ClockInView from '@/components/clockin/ClockInView';
 import PaymentView from '@/components/payment/PaymentView';
 import ProfileView from '@/components/profile/ProfileView';
 import NotificationView from '@/components/notifications/NotificationView';
 import DirectoryView from '@/components/directory/DirectoryView';
+import PendingApprovalView from '@/components/auth/PendingApprovalView';
 import Image from 'next/image';
 
 export default function TabNavigation() {
@@ -31,14 +34,29 @@ export default function TabNavigation() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [isProfileIncomplete] = useState(false); // This should check profile completeness
 
-  const tabs = [
+  // Define all tabs
+  const allTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Inbox },
     { id: 'tasks', label: 'Tugasan', icon: ListChecks },
     { id: 'clockin', label: 'Clock In', icon: Clock },
     { id: 'payment', label: 'Payment', icon: CreditCard },
     { id: 'directory', label: 'Directory', icon: Users },
+    { id: 'approval', label: 'Kelulusan', icon: UserCheck },
     { id: 'profile', label: 'Profile', icon: User, badge: isProfileIncomplete },
   ];
+
+  // Filter tabs based on user type - hide clock in for freelancers and approval for non-admins
+  const tabs = allTabs.filter(tab => {
+    if (tab.id === 'clockin') {
+      // Only show clock in for PT (Part Time) and FT (Full Time) employees
+      return user?.staffId?.startsWith('PT') || user?.staffId?.startsWith('FT');
+    }
+    if (tab.id === 'approval') {
+      // Only show approval tab for admins
+      return user?.isAdmin;
+    }
+    return true;
+  });
 
   const renderContent = () => {
     switch (activeTab) {
@@ -52,12 +70,19 @@ export default function TabNavigation() {
         return user?.isAdmin ? <AdminPaymentView /> : <PaymentView />;
       case 'directory':
         return <DirectoryView />;
+      case 'approval':
+        return <AdminApprovalView />;
       case 'profile':
         return <ProfileView />;
       default:
         return <Dashboard />;
     }
   };
+
+  // Check if user needs approval (not admin and not approved)
+  if (user && !user.isAdmin && !user.isApproved) {
+    return <PendingApprovalView />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -76,7 +101,7 @@ export default function TabNavigation() {
                   priority
                 />
               </div>
-              <h1 className="text-xl font-semibold">KDStudio</h1>
+              <h1 className="text-xl font-semibold">KDstudio</h1>
             </div>
             
             {activeTab === 'dashboard' && (

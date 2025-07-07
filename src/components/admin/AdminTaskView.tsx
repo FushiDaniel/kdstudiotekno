@@ -25,6 +25,7 @@ export default function AdminTaskView() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [feedbackNote, setFeedbackNote] = useState('');
+  const [adjustedAmount, setAdjustedAmount] = useState<number | null>(null);
   const [showChat, setShowChat] = useState(false);
   const [messages, setMessages] = useState<TaskMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -168,9 +169,12 @@ export default function AdminTaskView() {
     setIsUpdating(true);
     try {
       const now = new Date();
+      const finalAmount = adjustedAmount !== null ? adjustedAmount : selectedTask.amount;
       const updates = {
         status,
         adminFeedback: feedbackNote,
+        amount: finalAmount,
+        originalAmount: selectedTask.amount,
         reviewedAt: Timestamp.fromDate(now),
         reviewedBy: {
           uid: user.uid,
@@ -218,11 +222,49 @@ export default function AdminTaskView() {
       
       setSelectedTask(null);
       setFeedbackNote('');
+      setAdjustedAmount(null);
     } catch (error) {
       console.error('Error updating task:', error);
       alert('Failed to update task. Please try again.');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleAssignTask = async () => {
+    if (!taskToAssign || !assignedUserId || !user) return;
+
+    setIsAssigning(true);
+    try {
+      const assignedUser = users.find(u => u.uid === assignedUserId);
+      if (!assignedUser) return;
+
+      const now = new Date();
+      const updates = {
+        assignedTo: assignedUserId,
+        assignedToName: assignedUser.fullname,
+        assignedToStaffId: assignedUser.staffId,
+        assignedAt: Timestamp.fromDate(now),
+        status: TaskStatus.IN_PROGRESS,
+        startDate: Timestamp.fromDate(now)
+      };
+
+      await updateDoc(doc(db, 'tasks', taskToAssign.id), updates);
+      
+      // Update local state
+      setTasks(prev => prev.map(t => t.id === taskToAssign.id ? { ...t, ...updates, assignedAt: now, startDate: now } : t));
+      
+      // Close modal and reset state
+      setShowAssignModal(false);
+      setTaskToAssign(null);
+      setAssignedUserId('');
+      
+      console.log(`Task assigned to ${assignedUser.fullname}`);
+    } catch (error) {
+      console.error('Error assigning task:', error);
+      alert('Gagal menugaskan. Sila cuba lagi.');
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -322,10 +364,18 @@ export default function AdminTaskView() {
             <AdminTaskCard 
               key={task.id} 
               task={task} 
-              onViewDetail={() => setSelectedTask(task)}
+              onViewDetail={() => {
+                setSelectedTask(task);
+                setAdjustedAmount(null);
+              }}
+              onAssignTask={(task) => {
+                setTaskToAssign(task);
+                setShowAssignModal(true);
+              }}
               onTaskUpdated={(updatedTask) => {
                 setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
                 setSelectedTask(updatedTask);
+                setAdjustedAmount(null);
               }}
             />
           ))
@@ -505,6 +555,36 @@ export default function AdminTaskView() {
                 <div className="border-t pt-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Semakan Admin</h3>
                   <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Jumlah Bayaran Asal
+                        </label>
+                        <div className="p-3 bg-gray-50 border border-gray-300 rounded-md text-gray-900">
+                          {formatCurrency(selectedTask.amount)}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Laraskan Jumlah Bayaran (Pilihan)
+                        </label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={adjustedAmount !== null ? adjustedAmount : ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setAdjustedAmount(value === '' ? null : parseFloat(value));
+                          }}
+                          placeholder={`Asal: ${formatCurrency(selectedTask.amount)}`}
+                          className="w-full text-gray-900 bg-white border-gray-300"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Kosongkan untuk menggunakan jumlah asal
+                        </p>
+                      </div>
+                    </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Nota Maklum Balas (Pilihan)
@@ -515,6 +595,14 @@ export default function AdminTaskView() {
                         placeholder="Tambah nota atau komen untuk maklum balas..."
                         className="w-full text-gray-900 bg-white border-gray-300"
                       />
+                    </div>
+                    {adjustedAmount !== null && adjustedAmount !== selectedTask.amount && (
+                      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-sm text-yellow-800">
+                          <strong>Amaran:</strong> Jumlah bayaran akan diubah dari {formatCurrency(selectedTask.amount)} kepada {formatCurrency(adjustedAmount)}.
+                        </p>
+                      </div>
+                    )}
                     </div>
                     <div className="flex space-x-2">
                       <Button 
@@ -541,6 +629,69 @@ export default function AdminTaskView() {
           </Card>
         </div>
       )}
+
+      {/* Task Assignment Modal */}
+      {showAssignModal && taskToAssign && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md bg-white">
+            <CardHeader className="border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl font-semibold text-gray-900">Tugaskan Kepada Pengguna</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setShowAssignModal(false)} className="text-gray-500 hover:text-gray-700">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-2">Tugasan:</h3>
+                  <p className="text-sm text-gray-600">{taskToAssign.name}</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pilih Pengguna *
+                  </label>
+                  <select
+                    value={assignedUserId}
+                    onChange={(e) => setAssignedUserId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Pilih pengguna...</option>
+                    {users.map(user => (
+                      <option key={user.uid} value={user.uid}>
+                        {user.fullname} ({user.staffId}) - {user.employmentType}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex space-x-2 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowAssignModal(false)}
+                    className="flex-1"
+                  >
+                    Batal
+                  </Button>
+                  <Button 
+                    onClick={handleAssignTask}
+                    disabled={!assignedUserId || isAssigning}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    {isAssigning ? 'Menugaskan...' : 'Tugaskan'}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
@@ -548,10 +699,11 @@ export default function AdminTaskView() {
 interface AdminTaskCardProps {
   task: Task;
   onViewDetail: () => void;
+  onAssignTask: (task: Task) => void;
   onTaskUpdated: (task: Task) => void;
 }
 
-function AdminTaskCard({ task, onViewDetail }: AdminTaskCardProps) {
+function AdminTaskCard({ task, onViewDetail, onAssignTask }: AdminTaskCardProps) {
   const getStatusBadge = (status: TaskStatus) => {
     switch (status) {
       case TaskStatus.COMPLETED:
@@ -641,6 +793,16 @@ function AdminTaskCard({ task, onViewDetail }: AdminTaskCardProps) {
           >
             Lihat Detail
           </Button>
+          {!task.assignedTo && task.status === TaskStatus.NOT_STARTED && (
+            <Button 
+              onClick={() => onAssignTask(task)}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+              size="sm"
+            >
+              <UserPlus className="h-4 w-4 mr-1" />
+              Tugaskan
+            </Button>
+          )}
           {task.status === TaskStatus.SUBMITTED && (
             <Button 
               className="bg-blue-600 hover:bg-blue-700 text-white"

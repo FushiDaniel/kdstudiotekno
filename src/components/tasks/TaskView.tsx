@@ -241,22 +241,29 @@ function UserTaskCard({ task, onTaskSelect, getStatusColor, getStatusBadge }: Us
     <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-lg text-gray-900">{task.name}</CardTitle>
+          <div>
+            <CardTitle className="text-lg text-gray-900 mb-1">{task.name}</CardTitle>
+            <p className="text-sm text-gray-500 font-mono">ID: {task.id}</p>
+          </div>
           <Badge className={getStatusColor(task.status)}>
             {getStatusBadge(task.status)}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <p className="text-gray-600 mb-4">{task.description}</p>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+          <pre className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed font-sans max-h-24 overflow-y-auto">
+            {task.description}
+          </pre>
+        </div>
         
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center text-sm text-gray-500">
-            <DollarSign className="h-4 w-4 mr-1" />
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="flex items-center text-sm font-medium text-gray-900">
+            <DollarSign className="h-4 w-4 mr-2 text-green-600" />
             {formatCurrency(task.amount)}
           </div>
-          <div className="flex items-center text-sm text-gray-500">
-            <Clock className="h-4 w-4 mr-1" />
+          <div className="flex items-center text-sm text-gray-700">
+            <Clock className="h-4 w-4 mr-2 text-orange-500" />
             {formatDate(task.deadline)}
           </div>
         </div>
@@ -297,22 +304,29 @@ function OpenTaskCard({ task, onTakeTask, onTaskSelect, getStatusColor, getStatu
     <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-green-500">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-lg text-gray-900">{task.name}</CardTitle>
+          <div>
+            <CardTitle className="text-lg text-gray-900 mb-1">{task.name}</CardTitle>
+            <p className="text-sm text-gray-500 font-mono">ID: {task.id}</p>
+          </div>
           <Badge className={getStatusColor(task.status)}>
             {getStatusBadge(task.status)}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <p className="text-gray-600 mb-4">{task.description}</p>
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+          <pre className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed font-sans max-h-24 overflow-y-auto">
+            {task.description}
+          </pre>
+        </div>
         
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center text-sm text-gray-500">
-            <DollarSign className="h-4 w-4 mr-1" />
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="flex items-center text-sm font-medium text-gray-900">
+            <DollarSign className="h-4 w-4 mr-2 text-green-600" />
             {formatCurrency(task.amount)}
           </div>
-          <div className="flex items-center text-sm text-gray-500">
-            <Clock className="h-4 w-4 mr-1" />
+          <div className="flex items-center text-sm text-gray-700">
+            <Clock className="h-4 w-4 mr-2 text-orange-500" />
             {formatDate(task.deadline)}
           </div>
         </div>
