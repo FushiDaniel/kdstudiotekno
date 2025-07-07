@@ -346,6 +346,14 @@ function PaymentTaskCard({ task }: PaymentTaskCardProps) {
           </div>
           <div className="text-right">
             <div className="text-lg font-bold">{formatCurrency(task.amount)}</div>
+            {task.originalAmount && task.originalAmount !== task.amount && (
+              <div className="text-sm text-red-600 mb-2">
+                Asal: <span className="line-through">{formatCurrency(task.originalAmount)}</span>
+                <span className="ml-2 bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
+                  Penalti Dikenakan
+                </span>
+              </div>
+            )}
             <div className="flex space-x-2">
               <Badge className={getTaskStatusColor(task.status)}>
                 {task.status === TaskStatus.COMPLETED ? 'Selesai' : task.status}
