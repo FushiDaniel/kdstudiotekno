@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { User } from '@/types';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import { collection, query, onSnapshot, where, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, getDownloadURL } from 'firebase/storage';
-import { Search, Users, Phone, Mail, MapPin, X, Building, CreditCard } from 'lucide-react';
+import { Search, Users, Phone, Mail, MapPin, X, Building, CreditCard, UserCheck, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatDate } from '@/lib/utils';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -48,15 +49,19 @@ const getStatusText = (status: string) => {
 
 export default function DirectoryView() {
   const [users, setUsers] = useState<User[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<User[]>([]);
+  const [approvedUsers, setApprovedUsers] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState<'directory' | 'pending' | 'approved'>('directory');
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
 
   useEffect(() => {
-    const q = query(collection(db, 'users'));
-
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
+    // Listen for all users (for directory)
+    const allUsersQuery = query(collection(db, 'users'));
+    const allUsersUnsubscribe = onSnapshot(allUsersQuery, async (snapshot) => {
       const allUsers = await Promise.all(snapshot.docs.map(async doc => {
         const data = doc.data();
         let profileImageUrl = data.profileImageUrl;
@@ -82,15 +87,102 @@ export default function DirectoryView() {
       
       setUsers(allUsers);
       setLoading(false);
-    }, (error) => {
-      console.error('Error fetching users:', error);
-      setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, []);
+    // Listen for pending users (only for admins)
+    let pendingUnsubscribe = () => {};
+    let approvedUnsubscribe = () => {};
+    
+    if (currentUser?.isAdmin) {
+      const pendingQuery = query(
+        collection(db, 'users'),
+        where('isApproved', '==', false)
+      );
+      pendingUnsubscribe = onSnapshot(pendingQuery, (snapshot) => {
+        const users = snapshot.docs.map(doc => ({
+          uid: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+          updatedAt: doc.data().updatedAt?.toDate() || new Date()
+        })) as User[];
+        
+        const nonAdminUsers = users.filter(u => !u.isAdmin);
+        setPendingUsers(nonAdminUsers);
+      });
 
-  const filteredUsers = users.filter(user => {
+      const approvedQuery = query(
+        collection(db, 'users'),
+        where('isApproved', '==', true)
+      );
+      approvedUnsubscribe = onSnapshot(approvedQuery, (snapshot) => {
+        const users = snapshot.docs.map(doc => ({
+          uid: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+          updatedAt: doc.data().updatedAt?.toDate() || new Date()
+        })) as User[];
+        
+        const nonAdminUsers = users.filter(u => !u.isAdmin);
+        setApprovedUsers(nonAdminUsers);
+      });
+    }
+
+    return () => {
+      allUsersUnsubscribe();
+      pendingUnsubscribe();
+      approvedUnsubscribe();
+    };
+  }, [currentUser?.isAdmin]);
+
+  const handleApproveUser = async (userId: string) => {
+    setIsUpdating(userId);
+    try {
+      await updateDoc(doc(db, 'users', userId), {
+        isApproved: true,
+        updatedAt: Timestamp.fromDate(new Date())
+      });
+    } catch (error) {
+      console.error('Error approving user:', error);
+      alert('Gagal meluluskan pengguna. Sila cuba lagi.');
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const handleRejectUser = async (userId: string) => {
+    if (!confirm('Adakah anda pasti ingin menolak pengguna ini? Tindakan ini tidak boleh dibatalkan.')) {
+      return;
+    }
+    
+    setIsUpdating(userId);
+    try {
+      await updateDoc(doc(db, 'users', userId), {
+        isApproved: false,
+        rejectedAt: Timestamp.fromDate(new Date()),
+        updatedAt: Timestamp.fromDate(new Date())
+      });
+    } catch (error) {
+      console.error('Error rejecting user:', error);
+      alert('Gagal menolak pengguna. Sila cuba lagi.');
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const getCurrentUsers = () => {
+    switch (activeTab) {
+      case 'directory':
+        return users;
+      case 'pending':
+        return pendingUsers;
+      case 'approved':
+        return approvedUsers;
+      default:
+        return users;
+    }
+  };
+
+  const filteredUsers = getCurrentUsers().filter(user => {
     const searchLower = searchTerm.toLowerCase();
     return (
       user.fullname?.toLowerCase().includes(searchLower) ||
@@ -112,9 +204,49 @@ export default function DirectoryView() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Directory Staf</h1>
-        <p className="text-gray-600">Direktori ahli pasukan KDStudio</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          {activeTab === 'directory' ? 'Directory Staf' : 
+           activeTab === 'pending' ? 'Kelulusan Pengguna' : 
+           'Pengguna Diluluskan'}
+        </h1>
+        <p className="text-gray-600">
+          {activeTab === 'directory' ? 'Direktori ahli pasukan KDStudio' : 
+           activeTab === 'pending' ? 'Pengguna menunggu kelulusan' : 
+           'Pengguna yang telah diluluskan'}
+        </p>
       </div>
+
+      {/* Tab Navigation - Show only for admins */}
+      {currentUser?.isAdmin && (
+        <div className="mb-6">
+          <div className="flex space-x-2">
+            <Button
+              variant={activeTab === 'directory' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('directory')}
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              Directory ({users.length})
+            </Button>
+            <Button
+              variant={activeTab === 'pending' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('pending')}
+              className="flex items-center gap-2"
+            >
+              <Clock className="h-4 w-4" />
+              Menunggu ({pendingUsers.length})
+            </Button>
+            <Button
+              variant={activeTab === 'approved' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('approved')}
+              className="flex items-center gap-2"
+            >
+              <UserCheck className="h-4 w-4" />
+              Diluluskan ({approvedUsers.length})
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <div className="mb-6">
@@ -129,70 +261,86 @@ export default function DirectoryView() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-600 mr-3" />
-              <div>
-                <p className="text-sm font-medium text-gray-600">Jumlah Staf</p>
-                <p className="text-2xl font-bold">{users.length}</p>
+      {/* Stats - Only show for directory tab */}
+      {activeTab === 'directory' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <Users className="h-8 w-8 text-blue-600 mr-3" />
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Jumlah Staf</p>
+                  <p className="text-2xl font-bold">{users.length}</p>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Dlm Talian</p>
+                  <p className="text-2xl font-bold">
+                    {users.filter(u => u.availabilityStatus === 'dalam_talian').length}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Dlm Talian</p>
-                <p className="text-2xl font-bold">
-                  {users.filter(u => u.availabilityStatus === 'dalam_talian').length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
-                <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                  <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Tdk Aktif</p>
+                  <p className="text-2xl font-bold">
+                    {users.filter(u => u.availabilityStatus === 'tidak_aktif').length}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium text-gray-600">Tdk Aktif</p>
-                <p className="text-2xl font-bold">
-                  {users.filter(u => u.availabilityStatus === 'tidak_aktif').length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* User Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className={activeTab === 'directory' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-6"}>
         {filteredUsers.length === 0 ? (
-          <div className="col-span-full text-center py-8">
+          <div className={activeTab === 'directory' ? "col-span-full text-center py-8" : "text-center py-8"}>
             <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
             <p className="text-gray-500">
-              {searchTerm ? `Tiada hasil untuk "${searchTerm}"` : 'Tiada staf dalam direktori'}
+              {searchTerm ? `Tiada hasil untuk "${searchTerm}"` : 
+               activeTab === 'directory' ? 'Tiada staf dalam direktori' :
+               activeTab === 'pending' ? 'Tiada pengguna menunggu kelulusan' :
+               'Tiada pengguna yang diluluskan'}
             </p>
           </div>
         ) : (
           filteredUsers.map((user) => (
-            <UserCard 
-              key={user.uid} 
-              user={user} 
-              onClick={() => setSelectedUser(user)}
-              showDetails={currentUser?.isAdmin || false}
-            />
+            activeTab === 'directory' ? (
+              <UserCard 
+                key={user.uid} 
+                user={user} 
+                onClick={() => setSelectedUser(user)}
+                showDetails={currentUser?.isAdmin || false}
+              />
+            ) : (
+              <ApprovalUserCard
+                key={user.uid}
+                user={user}
+                onApprove={() => handleApproveUser(user.uid)}
+                onReject={() => handleRejectUser(user.uid)}
+                isUpdating={isUpdating === user.uid}
+                isPending={activeTab === 'pending'}
+              />
+            )
           ))
         )}
       </div>
@@ -410,6 +558,131 @@ function UserCard({ user, onClick, showDetails }: UserCardProps) {
             )}
           </div>
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface ApprovalUserCardProps {
+  user: User;
+  onApprove: () => void;
+  onReject: () => void;
+  isUpdating: boolean;
+  isPending: boolean;
+}
+
+function ApprovalUserCard({ user, onApprove, onReject, isUpdating, isPending }: ApprovalUserCardProps) {
+  const getEmploymentTypeBadge = (type: string) => {
+    switch (type) {
+      case 'FT':
+        return { text: 'Sepenuh Masa', color: 'bg-green-100 text-green-800' };
+      case 'PT':
+        return { text: 'Separuh Masa', color: 'bg-blue-100 text-blue-800' };
+      case 'FL':
+        return { text: 'Bebas', color: 'bg-gray-100 text-gray-800' };
+      default:
+        return { text: type, color: 'bg-gray-100 text-gray-800' };
+    }
+  };
+
+  const employmentBadge = getEmploymentTypeBadge(user.employmentType);
+
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+              {user.profileImageUrl ? (
+                <img
+                  src={user.profileImageUrl}
+                  alt={user.fullname}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              ) : (
+                <Users className="h-6 w-6 text-gray-500" />
+              )}
+            </div>
+            <div>
+              <CardTitle className="text-lg text-gray-900">{user.fullname}</CardTitle>
+              <p className="text-sm text-gray-500">{user.email}</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Badge className={employmentBadge.color}>
+              {employmentBadge.text}
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              {user.staffId}
+            </Badge>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="pt-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="flex items-center text-sm text-gray-600">
+            <Phone className="h-4 w-4 mr-2" />
+            {user.phoneNumber || 'Tidak diberikan'}
+          </div>
+          <div className="flex items-center text-sm text-gray-600">
+            <MapPin className="h-4 w-4 mr-2" />
+            {user.homeAddress || 'Tidak diberikan'}
+          </div>
+          <div className="flex items-center text-sm text-gray-600">
+            <Clock className="h-4 w-4 mr-2" />
+            {formatDate(user.createdAt)}
+          </div>
+        </div>
+
+        {user.bio && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-700">{user.bio}</p>
+          </div>
+        )}
+
+        {user.skills && user.skills.length > 0 && (
+          <div className="mb-4">
+            <p className="text-sm text-gray-500 mb-2">Kemahiran:</p>
+            <div className="flex flex-wrap gap-2">
+              {user.skills.map((skill, index) => (
+                <Badge key={index} variant="secondary" className="text-xs">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {user.bankName && user.bankAccountNumber && (
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+            <p className="text-sm font-medium text-gray-700 mb-1">Maklumat Bank:</p>
+            <p className="text-sm text-gray-600">{user.bankName}</p>
+            <p className="text-sm text-gray-600">{user.bankAccountNumber}</p>
+          </div>
+        )}
+
+        {isPending && (
+          <div className="flex space-x-2 pt-4 border-t">
+            <Button 
+              onClick={onApprove}
+              disabled={isUpdating}
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              {isUpdating ? 'Meluluskan...' : 'Luluskan'}
+            </Button>
+            <Button 
+              onClick={onReject}
+              disabled={isUpdating}
+              variant="destructive"
+              className="flex-1"
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              {isUpdating ? 'Menolak...' : 'Tolak'}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

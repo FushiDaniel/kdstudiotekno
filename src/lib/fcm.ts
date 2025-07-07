@@ -4,7 +4,7 @@ import { getToken, onMessage, Messaging } from 'firebase/messaging';
 export class FCMService {
   private static instance: FCMService;
   private messaging: Messaging | null = null;
-  private vapidKey = 'BM8xKOeTVJ8C1lGLs7xO-QQQvGZd0vVYQTQF5KP8y8rFAd5n2uv7s7vr9vL0_IY7kC_sP9J8N5yxF3xQRJKY8vE'; // You'll need to get this from Firebase Console
+  private vapidKey = 'BKlVQRrEQZpXikAgbWUTgWWgZNiEPTKnIDuMOT32pBm5MQbp0Fx0MSEw4a3pFXXirvXApEG_NNlVFyKtlCeoTwo'; // From Firebase Console Web Push certificates
 
   public static getInstance(): FCMService {
     if (!FCMService.instance) {

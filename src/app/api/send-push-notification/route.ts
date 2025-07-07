@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getMessaging } from 'firebase-admin/messaging';
+
+// Initialize Firebase Admin SDK
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
+      projectId: 'kdstudio-d9676',
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    }),
+    projectId: 'kdstudio-d9676'
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,13 +27,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get FCM server key from environment variables
-    const fcmServerKey = process.env.FCM_SERVER_KEY;
-    if (!fcmServerKey) {
-      console.log('FCM Server Key not configured, skipping push notification');
+    // Check if Firebase Admin is configured
+    if (!process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+      console.log('Firebase Admin credentials not configured, skipping push notification');
       return NextResponse.json({
         success: false,
-        message: 'FCM Server Key not configured'
+        message: 'Firebase Admin credentials not configured'
       });
     }
 
@@ -51,79 +64,66 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Prepare FCM notification payload
-    const fcmPayload = {
-      registration_ids: tokens,
-      notification: {
-        title: title,
-        body: body,
-        icon: '/kdlogo.jpeg',
-        badge: '/kdlogo.jpeg',
-        tag: 'kdstudio-notification',
-        click_action: data?.url || '/'
-      },
-      data: {
-        url: data?.url || '/',
-        taskId: data?.taskId || '',
-        type: data?.type || 'general',
-        ...data
-      },
-      webpush: {
+    // Use Firebase Admin SDK to send messages
+    const messaging = getMessaging();
+    const sendPromises = tokens.map(token => {
+      const message = {
+        token: token,
         notification: {
-          icon: '/kdlogo.jpeg',
-          badge: '/kdlogo.jpeg',
-          vibrate: [100, 50, 100],
-          requireInteraction: false,
-          actions: [
-            {
-              action: 'open',
-              title: 'Buka Aplikasi'
-            },
-            {
-              action: 'close', 
-              title: 'Tutup'
-            }
-          ]
+          title: title,
+          body: body,
+          imageUrl: '/kdlogo.jpeg'
+        },
+        data: {
+          url: data?.url || '/',
+          taskId: data?.taskId || '',
+          type: data?.type || 'general',
+          ...data
+        },
+        webpush: {
+          notification: {
+            icon: '/kdlogo.jpeg',
+            badge: '/kdlogo.jpeg',
+            vibrate: [100, 50, 100],
+            requireInteraction: false,
+            actions: [
+              {
+                action: 'open',
+                title: 'Buka Aplikasi'
+              },
+              {
+                action: 'close', 
+                title: 'Tutup'
+              }
+            ]
+          }
         }
-      }
-    };
-
-    // Send push notification via FCM
-    const fcmResponse = await fetch('https://fcm.googleapis.com/fcm/send', {
-      method: 'POST',
-      headers: {
-        'Authorization': `key=${fcmServerKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(fcmPayload)
+      };
+      
+      return messaging.send(message);
     });
 
-    const fcmResult = await fcmResponse.json();
+    // Send all notifications and handle results
+    const results = await Promise.allSettled(sendPromises);
+    const successCount = results.filter(result => result.status === 'fulfilled').length;
+    const failureCount = results.filter(result => result.status === 'rejected').length;
 
-    if (fcmResponse.ok && fcmResult.success > 0) {
-      console.log('Push notification sent successfully:', {
-        success: fcmResult.success,
-        failure: fcmResult.failure,
-        title: title,
-        timestamp: new Date().toISOString()
-      });
+    console.log('Push notifications sent:', {
+      success: successCount,
+      failure: failureCount,
+      title: title,
+      timestamp: new Date().toISOString()
+    });
 
-      return NextResponse.json({
-        success: true,
-        message: 'Push notification sent successfully',
-        results: {
-          success: fcmResult.success,
-          failure: fcmResult.failure,
-          total: tokens.length
-        }
-      });
-    } else {
-      console.error('FCM send failed:', fcmResult);
-      return NextResponse.json(
-        { error: 'Failed to send push notification', details: fcmResult },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json({
+      success: successCount > 0,
+      message: `Push notifications sent: ${successCount} succeeded, ${failureCount} failed`,
+      results: {
+        success: successCount,
+        failure: failureCount,
+        total: tokens.length
+      }
+    });
 
   } catch (error) {
     console.error('Error sending push notification:', error);
