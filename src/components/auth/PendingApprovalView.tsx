@@ -104,8 +104,8 @@ export default function PendingApprovalView() {
           <div className="text-center text-sm text-gray-500">
             <p>
               Jika anda mempunyai sebarang pertanyaan, sila hubungi admin di{' '}
-              <a href="mailto:admin@kdstudio.com" className="text-blue-600 hover:underline">
-                admin@kdstudio.com
+              <a href="mailto:hubungi@kerisdigital.com" className="text-blue-600 hover:underline">
+                hubungi@kerisdigital.com
               </a>
             </p>
           </div>
