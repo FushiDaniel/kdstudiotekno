@@ -1,19 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getMessaging } from 'firebase-admin/messaging';
 
-// Initialize Firebase Admin SDK
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: 'kdstudio-d9676',
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-    projectId: 'kdstudio-d9676'
-  });
+// Dynamic imports for Firebase Admin to prevent build-time initialization
+let admin: any = null;
+
+// Initialize Firebase Admin SDK dynamically
+async function initializeFirebaseAdmin() {
+  if (!admin) {
+    const { initializeApp, getApps, cert } = await import('firebase-admin/app');
+    
+    if (!getApps().length) {
+      if (!process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+        throw new Error('Firebase Admin credentials not configured');
+      }
+      
+      initializeApp({
+        credential: cert({
+          projectId: 'kdstudio-d9676',
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        }),
+        projectId: 'kdstudio-d9676'
+      });
+    }
+    
+    const { getMessaging } = await import('firebase-admin/messaging');
+    admin = { getMessaging };
+  }
+  
+  return admin;
 }
 
 export async function POST(request: NextRequest) {
@@ -33,6 +49,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         message: 'Firebase Admin credentials not configured'
+      });
+    }
+
+    // Initialize Firebase Admin SDK
+    let firebaseAdmin;
+    try {
+      firebaseAdmin = await initializeFirebaseAdmin();
+    } catch (error) {
+      console.error('Failed to initialize Firebase Admin:', error);
+      return NextResponse.json({
+        success: false,
+        message: 'Firebase Admin initialization failed'
       });
     }
 
@@ -65,7 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use Firebase Admin SDK to send messages
-    const messaging = getMessaging();
+    const messaging = firebaseAdmin.getMessaging();
     const sendPromises = tokens.map(token => {
       const message = {
         token: token,
