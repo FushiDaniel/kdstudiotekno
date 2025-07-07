@@ -10,7 +10,7 @@ import { Task, TaskStatus, TaskPaymentStatus, User } from '@/types';
 import { collection, query, where, onSnapshot, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { DollarSign, CheckCircle, XCircle, Search, Users, Calendar, FileText } from 'lucide-react';
+import { DollarSign, CheckCircle, XCircle, Search, Users, Calendar, FileText, CreditCard } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { notificationService } from '@/lib/notifications';
 
@@ -304,6 +304,7 @@ export default function AdminPaymentView() {
             <PaymentTaskCard 
               key={task.id} 
               task={task} 
+              users={users}
               onApprove={() => handlePaymentAction(task.id, 'approve')}
               onDeny={() => handlePaymentAction(task.id, 'deny')}
               isProcessing={processingPayments.has(task.id)}
@@ -318,14 +319,16 @@ export default function AdminPaymentView() {
 
 interface PaymentTaskCardProps {
   task: Task;
+  users: User[];
   onApprove: () => void;
   onDeny: () => void;
   isProcessing: boolean;
   getPaymentStatusBadge: (status: TaskPaymentStatus) => { label: string; color: string };
 }
 
-function PaymentTaskCard({ task, onApprove, onDeny, isProcessing, getPaymentStatusBadge }: PaymentTaskCardProps) {
+function PaymentTaskCard({ task, users, onApprove, onDeny, isProcessing, getPaymentStatusBadge }: PaymentTaskCardProps) {
   const paymentBadge = getPaymentStatusBadge(task.paymentStatus);
+  const assignedUser = users.find(u => u.uid === task.assignedTo);
   
   return (
     <Card className="border-l-4 border-l-blue-500">

@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Task, TaskStatus, TaskPaymentStatus, TaskMessage } from '@/types';
-import { collection, query, onSnapshot, doc, updateDoc, where, addDoc } from 'firebase/firestore';
+import { Task, TaskStatus, TaskPaymentStatus, TaskMessage, User } from '@/types';
+import { collection, query, onSnapshot, doc, updateDoc, where, addDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Plus, Search, DollarSign, Clock, Users, X, CheckCircle, FileText, MessageCircle, Send } from 'lucide-react';
+import { Plus, Search, DollarSign, Clock, Users, X, CheckCircle, FileText, MessageCircle, Send, UserPlus } from 'lucide-react';
 import CreateTaskForm from './CreateTaskForm';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,6 +30,11 @@ export default function AdminTaskView() {
   const [messages, setMessages] = useState<TaskMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [taskToAssign, setTaskToAssign] = useState<Task | null>(null);
+  const [assignedUserId, setAssignedUserId] = useState('');
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     // Simple query without orderBy to avoid index requirement
@@ -60,6 +65,27 @@ export default function AdminTaskView() {
     });
 
     return () => unsubscribe();
+  }, []);
+
+  // Fetch users for assignment
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const allUsers = usersSnapshot.docs.map(doc => ({
+          uid: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+          updatedAt: doc.data().updatedAt?.toDate() || new Date()
+        })) as User[];
+        
+        setUsers(allUsers.filter(u => !u.isAdmin && u.isApproved)); // Only approved non-admin users
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUsers();
   }, []);
 
   // Listen for messages when a task is selected
@@ -603,7 +629,6 @@ export default function AdminTaskView() {
                         </p>
                       </div>
                     )}
-                    </div>
                     <div className="flex space-x-2">
                       <Button 
                         onClick={() => handleTaskReview(TaskStatus.COMPLETED)}
