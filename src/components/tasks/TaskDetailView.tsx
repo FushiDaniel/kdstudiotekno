@@ -33,8 +33,7 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
 
     const q = query(
       collection(db, 'taskMessages'),
-      where('taskId', '==', task.id),
-      orderBy('timestamp', 'asc')
+      where('taskId', '==', task.id)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -44,7 +43,12 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
         timestamp: doc.data().timestamp?.toDate() || new Date()
       })) as TaskMessage[];
       
-      setMessages(taskMessages);
+      // Sort manually to avoid index requirement
+      const sortedMessages = taskMessages.sort((a, b) => 
+        a.timestamp.getTime() - b.timestamp.getTime()
+      );
+      
+      setMessages(sortedMessages);
     });
 
     return () => unsubscribe();
@@ -266,7 +270,11 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
 
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Penerangan</h3>
-            <p className="text-gray-700">{task.description}</p>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <pre className="whitespace-pre-wrap text-gray-700 leading-relaxed font-sans">
+                {task.description}
+              </pre>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

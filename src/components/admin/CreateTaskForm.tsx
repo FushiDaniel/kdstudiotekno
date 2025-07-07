@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TaskStatus, TaskPaymentStatus } from '@/types';
-import { collection, addDoc, Timestamp, getDocs, query } from 'firebase/firestore';
+import { collection, addDoc, Timestamp, getDocs, query, setDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { X, Plus } from 'lucide-react';
 import { notificationService } from '@/lib/notifications';
@@ -45,6 +45,30 @@ export default function CreateTaskForm({ onClose, onTaskCreated }: CreateTaskFor
     }));
   };
 
+  const generateTaskId = async () => {
+    const now = new Date();
+    const yymmdd = now.getFullYear().toString().slice(-2) + 
+                   (now.getMonth() + 1).toString().padStart(2, '0') + 
+                   now.getDate().toString().padStart(2, '0');
+    
+    // Query existing tasks for today to get the next sequence number
+    const todayQuery = query(collection(db, 'tasks'));
+    const todayTasks = await getDocs(todayQuery);
+    
+    // Filter tasks that have IDs starting with today's date
+    const todayTaskIds = todayTasks.docs
+      .map(doc => doc.id)
+      .filter(id => id.startsWith(yymmdd))
+      .map(id => {
+        const sequence = id.split('-')[1];
+        return sequence ? parseInt(sequence) : 0;
+      })
+      .filter(num => !isNaN(num));
+    
+    const nextSequence = todayTaskIds.length > 0 ? Math.max(...todayTaskIds) + 1 : 1;
+    return `${yymmdd}-${nextSequence.toString().padStart(3, '0')}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -52,6 +76,7 @@ export default function CreateTaskForm({ onClose, onTaskCreated }: CreateTaskFor
     try {
       setIsCreating(true);
       const now = new Date();
+      const taskId = await generateTaskId();
       
       const newTask = {
         name: formData.name,
@@ -69,7 +94,8 @@ export default function CreateTaskForm({ onClose, onTaskCreated }: CreateTaskFor
         assignedToStaffId: null
       };
 
-      await addDoc(collection(db, 'tasks'), newTask);
+      // Use the generated taskId as the document ID
+      await setDoc(doc(db, 'tasks', taskId), newTask);
 
       // Fetch all users to notify about new task
       try {
@@ -129,8 +155,8 @@ export default function CreateTaskForm({ onClose, onTaskCreated }: CreateTaskFor
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Terangkan tugasan ini..."
-                className="w-full p-3 border border-gray-300 rounded-md resize-none h-24 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="8. Nota Tambahan&#10;Gunakan Bahasa Melayu sebagai bahasa utama&#10;&#10;Perlu mesra rakyat, inklusif dan sesuai untuk pelbagai lapisan masyarakat"
+                className="w-full p-3 border border-gray-300 rounded-md resize-none h-32 bg-white text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent leading-relaxed"
                 required
               />
             </div>

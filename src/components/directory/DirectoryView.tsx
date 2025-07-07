@@ -15,11 +15,15 @@ import { useAuth } from '@/contexts/AuthContext';
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'working':
-      return 'bg-green-100 text-green-800';
+      return 'bg-blue-100 text-blue-800';
     case 'break':
       return 'bg-yellow-100 text-yellow-800';
     case 'idle':
       return 'bg-gray-100 text-gray-800';
+    case 'dalam_talian':
+      return 'bg-green-100 text-green-800';
+    case 'tidak_aktif':
+      return 'bg-red-100 text-red-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
@@ -28,11 +32,15 @@ const getStatusColor = (status: string) => {
 const getStatusText = (status: string) => {
   switch (status) {
     case 'working':
-      return 'Bekerja';
+      return 'Sedang Bekerja';
     case 'break':
       return 'Rehat';
     case 'idle':
       return 'Idle';
+    case 'dalam_talian':
+      return 'Dalam Talian';
+    case 'tidak_aktif':
+      return 'Tidak Aktif';
     default:
       return 'Tidak Diketahui';
   }
@@ -142,9 +150,9 @@ export default function DirectoryView() {
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Aktif</p>
+                <p className="text-sm font-medium text-gray-600">Dalam Talian</p>
                 <p className="text-2xl font-bold">
-                  {users.filter(u => u.availabilityStatus === 'working').length}
+                  {users.filter(u => u.availabilityStatus === 'dalam_talian').length}
                 </p>
               </div>
             </div>
@@ -158,9 +166,9 @@ export default function DirectoryView() {
                 <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Idle</p>
+                <p className="text-sm font-medium text-gray-600">Tidak Aktif</p>
                 <p className="text-2xl font-bold">
-                  {users.filter(u => u.availabilityStatus === 'idle').length}
+                  {users.filter(u => u.availabilityStatus === 'tidak_aktif').length}
                 </p>
               </div>
             </div>

@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Task, TaskStatus, TaskPaymentStatus } from '@/types';
-import { collection, query, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { Task, TaskStatus, TaskPaymentStatus, TaskMessage } from '@/types';
+import { collection, query, onSnapshot, doc, updateDoc, where, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Plus, Search, DollarSign, Clock, Users, X, CheckCircle, FileText } from 'lucide-react';
+import { Plus, Search, DollarSign, Clock, Users, X, CheckCircle, FileText, MessageCircle, Send } from 'lucide-react';
 import CreateTaskForm from './CreateTaskForm';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +25,10 @@ export default function AdminTaskView() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [feedbackNote, setFeedbackNote] = useState('');
+  const [showChat, setShowChat] = useState(false);
+  const [messages, setMessages] = useState<TaskMessage[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   useEffect(() => {
     // Simple query without orderBy to avoid index requirement
@@ -56,6 +60,57 @@ export default function AdminTaskView() {
 
     return () => unsubscribe();
   }, []);
+
+  // Listen for messages when a task is selected
+  useEffect(() => {
+    if (!selectedTask?.id) {
+      setMessages([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, 'taskMessages'),
+      where('taskId', '==', selectedTask.id)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const taskMessages = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        timestamp: doc.data().timestamp?.toDate() || new Date()
+      })) as TaskMessage[];
+      
+      // Sort manually to avoid index requirement
+      const sortedMessages = taskMessages.sort((a, b) => 
+        a.timestamp.getTime() - b.timestamp.getTime()
+      );
+      
+      setMessages(sortedMessages);
+    });
+
+    return () => unsubscribe();
+  }, [selectedTask?.id]);
+
+  const handleSendMessage = async () => {
+    if (!user || !newMessage.trim() || !selectedTask) return;
+
+    setIsSendingMessage(true);
+    try {
+      await addDoc(collection(db, 'taskMessages'), {
+        taskId: selectedTask.id,
+        senderId: user.uid,
+        senderName: user.fullname,
+        message: newMessage.trim(),
+        timestamp: Timestamp.fromDate(new Date())
+      });
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Gagal menghantar mesej. Sila cuba lagi.');
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
 
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = task.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -294,12 +349,92 @@ export default function AdminTaskView() {
             <CardHeader className="sticky top-0 bg-white border-b z-10">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-2xl font-bold text-gray-900">Detail Tugasan</CardTitle>
-                <Button variant="ghost" size="icon" onClick={() => setSelectedTask(null)}>
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowChat(!showChat)}
+                    className="flex items-center gap-2"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Chat
+                    {messages.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">
+                        {messages.length}
+                      </Badge>
+                    )}
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setSelectedTask(null)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              {showChat && (
+                <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Chat Tugasan
+                  </h3>
+                  
+                  <div className="space-y-4 mb-4 max-h-60 overflow-y-auto">
+                    {messages.length === 0 ? (
+                      <p className="text-gray-500 text-center py-4">
+                        Belum ada mesej. Mulakan perbualan!
+                      </p>
+                    ) : (
+                      messages.map((message) => (
+                        <div
+                          key={message.id}
+                          className={`flex ${message.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
+                        >
+                          <div
+                            className={`max-w-xs px-4 py-2 rounded-lg ${
+                              message.senderId === user?.uid
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-200 text-gray-800'
+                            }`}
+                          >
+                            <p className="text-sm font-medium mb-1">{message.senderName}</p>
+                            <p className="text-sm">{message.message}</p>
+                            <p className="text-xs opacity-75 mt-1">
+                              {message.timestamp.toLocaleTimeString('ms-MY', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                day: '2-digit',
+                                month: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Input
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Taip mesej anda..."
+                      className="flex-1"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!newMessage.trim() || isSendingMessage}
+                      size="sm"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Nama Tugasan</h3>
                 <p className="text-gray-700">{selectedTask.name}</p>
@@ -319,7 +454,11 @@ export default function AdminTaskView() {
 
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Penerangan</h3>
-                <p className="text-gray-700">{selectedTask.description}</p>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <pre className="whitespace-pre-wrap text-gray-700 leading-relaxed font-sans">
+                    {selectedTask.description}
+                  </pre>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
