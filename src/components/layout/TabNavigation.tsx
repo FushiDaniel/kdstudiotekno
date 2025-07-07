@@ -39,10 +39,10 @@ export default function TabNavigation() {
     { id: 'dashboard', label: 'Dashboard', icon: Inbox },
     { id: 'tasks', label: 'Tugasan', icon: ListChecks },
     { id: 'clockin', label: 'Clock In', icon: Clock },
-    { id: 'payment', label: 'Payment', icon: CreditCard },
-    { id: 'directory', label: 'Directory', icon: Users },
+    { id: 'payment', label: 'Bayaran', icon: CreditCard },
+    { id: 'directory', label: 'Direktori', icon: Users },
     { id: 'approval', label: 'Kelulusan', icon: UserCheck },
-    { id: 'profile', label: 'Profile', icon: User, badge: isProfileIncomplete },
+    { id: 'profile', label: 'Profil', icon: User, badge: isProfileIncomplete },
   ];
 
   // Filter tabs based on user type - hide clock in for freelancers and approval for non-admins

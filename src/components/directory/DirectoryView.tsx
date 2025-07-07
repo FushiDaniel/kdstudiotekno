@@ -32,17 +32,17 @@ const getStatusColor = (status: string) => {
 const getStatusText = (status: string) => {
   switch (status) {
     case 'working':
-      return 'Sedang Bekerja';
+      return 'Sdg Bekerja';
     case 'break':
       return 'Rehat';
     case 'idle':
       return 'Idle';
     case 'dalam_talian':
-      return 'Dalam Talian';
+      return 'Dlm Talian';
     case 'tidak_aktif':
       return 'Tidak Aktif';
     default:
-      return 'Tidak Diketahui';
+      return 'Tdk Diketahui';
   }
 };
 
@@ -150,7 +150,7 @@ export default function DirectoryView() {
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Dalam Talian</p>
+                <p className="text-sm font-medium text-gray-600">Dlm Talian</p>
                 <p className="text-2xl font-bold">
                   {users.filter(u => u.availabilityStatus === 'dalam_talian').length}
                 </p>
@@ -166,7 +166,7 @@ export default function DirectoryView() {
                 <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Tidak Aktif</p>
+                <p className="text-sm font-medium text-gray-600">Tdk Aktif</p>
                 <p className="text-2xl font-bold">
                   {users.filter(u => u.availabilityStatus === 'tidak_aktif').length}
                 </p>
