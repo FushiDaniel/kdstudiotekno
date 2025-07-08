@@ -18,7 +18,6 @@ import {
 import { Task, TaskStatus, TaskPaymentStatus } from '@/types';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import NotificationTest from '@/components/admin/NotificationTest';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export default function Dashboard() {
@@ -155,9 +154,6 @@ export default function Dashboard() {
               <p className="text-gray-600">{user?.staffId}</p>
             </div>
           </div>
-
-          {/* Notification Test for Admins */}
-          <NotificationTest />
 
           {/* Current Month Earnings Card */}
           <Card className="mb-6">
