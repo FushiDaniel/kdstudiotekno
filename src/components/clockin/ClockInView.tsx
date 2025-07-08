@@ -8,7 +8,8 @@ import { ClockInRecord } from '@/types';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatTime, formatDate } from '@/lib/utils';
-import { Play, Square, Calendar, MapPin } from 'lucide-react';
+import { Play, Square, Calendar, MapPin, Clock, Users } from 'lucide-react';
+import AdminTimeTrackingView from '@/components/admin/AdminTimeTrackingView';
 
 export default function ClockInView() {
   const { user } = useAuth();
@@ -16,6 +17,7 @@ export default function ClockInView() {
   const [activeSession, setActiveSession] = useState<ClockInRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeTab, setActiveTab] = useState<'clockin' | 'admin'>('clockin');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -201,9 +203,8 @@ export default function ClockInView() {
   const formatTimeWithPeriod = (date: Date | null) => {
     if (!date) return '--:--';
     try {
-      const hours = date.getHours();
-      const period = hours >= 12 ? 'PTG' : 'PG';
-      return `${formatTime(date)} ${period}`;
+      // formatTime already includes the period (PG/PTG) for ms-MY locale
+      return formatTime(date);
     } catch (error) {
       console.error('Error formatting time:', error);
       return '--:--';
@@ -235,14 +236,8 @@ export default function ClockInView() {
     );
   }
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Daftar Masuk / Keluar</h1>
-        <p className="text-gray-600">Jejak masa kerja anda</p>
-      </div>
-
+  const renderClockInContent = () => (
+    <>
       {/* Today's Sessions */}
       <Card className="mb-6">
         <CardContent className="p-4">
@@ -355,6 +350,57 @@ export default function ClockInView() {
           </Card>
         ))}
       </div>
+    </>
+  );
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Daftar Masuk / Keluar</h1>
+        <p className="text-gray-600">Jejak masa kerja anda</p>
+      </div>
+
+      {/* Tabs for Admin */}
+      {user?.isAdmin && (
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('clockin')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'clockin'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Clock className="h-4 w-4 inline mr-2" />
+                Clock In Saya
+              </button>
+              <button
+                onClick={() => setActiveTab('admin')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'admin'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Users className="h-4 w-4 inline mr-2" />
+                Pantau Pekerja
+              </button>
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* Content */}
+      {activeTab === 'clockin' ? (
+        <div className="max-w-4xl">
+          {renderClockInContent()}
+        </div>
+      ) : (
+        <AdminTimeTrackingView />
+      )}
     </div>
   );
 }
