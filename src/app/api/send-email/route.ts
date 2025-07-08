@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <!-- Header -->
           <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px;">
-            <img src="https://${request.headers.get('host')}/kdstudioEmail.png" alt="KDstudio" style="max-width: 200px; height: auto; margin-bottom: 10px;" />
+            <img src="https://${request.headers.get('host')}/kdstudioEmail.png" alt="KDstudio" style="max-width: 120px; height: auto; margin-bottom: 10px;" />
             <h1 style="color: #333; margin: 0; font-size: 24px;">KDstudio</h1>
             <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">Sistem Pengurusan Tugasan</p>
           </div>
