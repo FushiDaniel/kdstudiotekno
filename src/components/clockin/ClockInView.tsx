@@ -367,10 +367,10 @@ export default function ClockInView() {
           <div className="flex space-x-2">
             <button
               onClick={() => setActiveTab('clockin')}
-              className={`px-6 py-3 rounded-full font-medium text-sm flex items-center transition-all duration-200 ${
+              className={`px-6 py-3 rounded-2xl font-medium text-sm flex items-center transition-all duration-200 ${
                 activeTab === 'clockin'
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                  ? 'bg-gray-800 text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
               }`}
             >
               <Clock className="h-4 w-4 mr-2" />
@@ -378,10 +378,10 @@ export default function ClockInView() {
             </button>
             <button
               onClick={() => setActiveTab('admin')}
-              className={`px-6 py-3 rounded-full font-medium text-sm flex items-center transition-all duration-200 ${
+              className={`px-6 py-3 rounded-2xl font-medium text-sm flex items-center transition-all duration-200 ${
                 activeTab === 'admin'
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                  ? 'bg-gray-800 text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300'
               }`}
             >
               <Users className="h-4 w-4 mr-2" />
