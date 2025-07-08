@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Bell, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import { Bell, Send, AlertCircle, CheckCircle, Mail } from 'lucide-react';
 import { notificationService } from '@/lib/notifications';
 
 export default function NotificationTest() {
@@ -22,6 +22,8 @@ export default function NotificationTest() {
     setResult(null);
 
     try {
+      console.log('🧪 Testing FCM with user:', user.uid);
+      
       // Send to current user as test
       const success = await notificationService.sendPushNotification(
         user.uid,
@@ -30,22 +32,79 @@ export default function NotificationTest() {
         'system'
       );
 
+      console.log('🧪 FCM Test Result:', success);
+
       if (success) {
         setResult({
           success: true,
           message: 'Push notification sent successfully! Check your browser for the notification.'
         });
       } else {
-        setResult({
-          success: false,
-          message: 'Push notification failed. Check console for details. Email fallback may have been used.'
-        });
+        // Try email fallback test
+        console.log('🧪 Testing email fallback...');
+        try {
+          const emailResponse = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: user.email,
+              subject: title,
+              message: message
+            })
+          });
+          const emailResult = await emailResponse.json();
+          console.log('🧪 Email Test Result:', emailResult);
+          
+          setResult({
+            success: false,
+            message: `Push notification failed. Email fallback ${emailResult.success ? 'succeeded' : 'also failed'}. Check console for details.`
+          });
+        } catch (emailError) {
+          console.error('🧪 Email test failed:', emailError);
+          setResult({
+            success: false,
+            message: 'Both push and email notifications failed. Check console for details.'
+          });
+        }
       }
     } catch (error) {
       console.error('Test notification error:', error);
       setResult({
         success: false,
         message: 'Failed to send test notification. Check console for error details.'
+      });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const testEmailDirect = async () => {
+    if (!user) return;
+
+    setIsSending(true);
+    setResult(null);
+
+    try {
+      console.log('🧪 Testing email directly...');
+      
+      const response = await fetch('/api/test-email', {
+        method: 'POST'
+      });
+      
+      const result = await response.json();
+      console.log('🧪 Direct Email Test Result:', result);
+      
+      setResult({
+        success: response.ok,
+        message: response.ok 
+          ? 'Email test completed! Check console and your email inbox.'
+          : `Email test failed: ${result.error}`
+      });
+    } catch (error) {
+      console.error('Direct email test error:', error);
+      setResult({
+        success: false,
+        message: 'Direct email test failed. Check console for details.'
       });
     } finally {
       setIsSending(false);
@@ -118,7 +177,7 @@ export default function NotificationTest() {
           />
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             onClick={sendTestNotification}
             disabled={isSending || !title.trim() || !message.trim()}
@@ -136,6 +195,16 @@ export default function NotificationTest() {
           >
             <Bell className="h-4 w-4" />
             Test Local Notification
+          </Button>
+
+          <Button
+            variant="secondary"
+            onClick={testEmailDirect}
+            disabled={isSending}
+            className="flex items-center gap-2"
+          >
+            <Mail className="h-4 w-4" />
+            {isSending ? 'Testing Email...' : 'Test Email Direct'}
           </Button>
         </div>
 
