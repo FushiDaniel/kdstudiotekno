@@ -364,31 +364,29 @@ export default function ClockInView() {
       {/* Tabs for Admin */}
       {user?.isAdmin && (
         <div className="mb-6">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8">
-              <button
-                onClick={() => setActiveTab('clockin')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'clockin'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <Clock className="h-4 w-4 inline mr-2" />
-                Clock In Saya
-              </button>
-              <button
-                onClick={() => setActiveTab('admin')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'admin'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                <Users className="h-4 w-4 inline mr-2" />
-                Pantau Pekerja
-              </button>
-            </nav>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setActiveTab('clockin')}
+              className={`px-6 py-3 rounded-full font-medium text-sm flex items-center transition-all duration-200 ${
+                activeTab === 'clockin'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+              }`}
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Clock In Saya
+            </button>
+            <button
+              onClick={() => setActiveTab('admin')}
+              className={`px-6 py-3 rounded-full font-medium text-sm flex items-center transition-all duration-200 ${
+                activeTab === 'admin'
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+              }`}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Pantau Pekerja
+            </button>
           </div>
         </div>
       )}

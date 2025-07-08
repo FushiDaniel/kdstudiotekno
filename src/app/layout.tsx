@@ -7,8 +7,8 @@ import { NotificationProvider } from "@/components/notifications/NotificationMan
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "KDStudio - Task Management System",
-  description: "Manage your tasks, track work hours, and monitor earnings with KDStudio",
+  title: "KDstudio - Sistem Pengurusan Tugasan",
+  description: "Uruskan tugasan anda, jejak masa kerja, dan pantau pendapatan dengan KDstudio",
   manifest: "/manifest.json",
   icons: {
     icon: "/kdlogo.jpeg",

@@ -54,8 +54,9 @@ export async function POST(request: NextRequest) {
         <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <!-- Header -->
           <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #f0f0f0; padding-bottom: 20px;">
-            <h1 style="color: #333; margin: 0; font-size: 24px;">KDStudio</h1>
-            <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">Task Management System</p>
+            <img src="https://${request.headers.get('host')}/kdstudioEmail.png" alt="KDstudio" style="max-width: 200px; height: auto; margin-bottom: 10px;" />
+            <h1 style="color: #333; margin: 0; font-size: 24px;">KDstudio</h1>
+            <p style="color: #666; margin: 5px 0 0 0; font-size: 14px;">Sistem Pengurusan Tugasan</p>
           </div>
           
           <!-- Content -->
@@ -69,11 +70,11 @@ export async function POST(request: NextRequest) {
           <!-- Footer -->
           <div style="border-top: 1px solid #f0f0f0; padding-top: 20px; text-align: center;">
             <p style="color: #999; font-size: 12px; margin: 0;">
-              Email ini dihantar secara automatik dari sistem KDStudio.<br>
+              Email ini dihantar secara automatik dari sistem KDstudio.<br>
               Jangan balas email ini.
             </p>
             <p style="color: #999; font-size: 11px; margin: 10px 0 0 0;">
-              © ${new Date().getFullYear()} KDStudio. Semua hak terpelihara.
+              © ${new Date().getFullYear()} KDstudio. Semua hak terpelihara.
             </p>
           </div>
         </div>
@@ -84,11 +85,11 @@ export async function POST(request: NextRequest) {
     // Send email
     const mailOptions = {
       from: {
-        name: 'KDStudio',
+        name: 'KDstudio',
         address: process.env.EMAIL_USER
       },
       to: to,
-      subject: `[KDStudio] ${subject}`,
+      subject: `[KDstudio] ${subject}`,
       text: message, // Plain text fallback
       html: htmlTemplate
     };
