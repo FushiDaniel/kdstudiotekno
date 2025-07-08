@@ -18,6 +18,7 @@ import Dashboard from '@/components/dashboard/Dashboard';
 import TaskView from '@/components/tasks/TaskView';
 import AdminTaskView from '@/components/admin/AdminTaskView';
 import AdminPaymentView from '@/components/admin/AdminPaymentView';
+import AdminTimeTrackingView from '@/components/admin/AdminTimeTrackingView';
 import ClockInView from '@/components/clockin/ClockInView';
 import PaymentView from '@/components/payment/PaymentView';
 import ProfileView from '@/components/profile/ProfileView';
@@ -25,6 +26,14 @@ import NotificationView from '@/components/notifications/NotificationView';
 import DirectoryView from '@/components/directory/DirectoryView';
 import PendingApprovalView from '@/components/auth/PendingApprovalView';
 import Image from 'next/image';
+
+interface Tab {
+  id: string;
+  label: string;
+  icon: any;
+  badge?: boolean;
+  adminOnly?: boolean;
+}
 
 export default function TabNavigation() {
   const { user } = useAuth();
@@ -38,16 +47,21 @@ export default function TabNavigation() {
     { id: 'dashboard', label: 'Dashboard', icon: Inbox },
     { id: 'tasks', label: 'Tugasan', icon: ListChecks },
     { id: 'clockin', label: 'Clock In', icon: Clock },
+    { id: 'timetracking', label: 'Pantau Masa', icon: UserCheck, adminOnly: true },
     { id: 'payment', label: 'Bayaran', icon: CreditCard },
     { id: 'directory', label: 'Direktori', icon: Users },
     { id: 'profile', label: 'Profil', icon: User, badge: isProfileIncomplete },
   ];
 
-  // Filter tabs based on user type - hide clock in for freelancers
+  // Filter tabs based on user type
   const tabs = allTabs.filter(tab => {
     if (tab.id === 'clockin') {
       // Only show clock in for PT (Part Time) and FT (Full Time) employees
       return user?.staffId?.startsWith('PT') || user?.staffId?.startsWith('FT');
+    }
+    if (tab.adminOnly) {
+      // Only show admin-only tabs for admins
+      return user?.isAdmin;
     }
     return true;
   });
@@ -60,6 +74,8 @@ export default function TabNavigation() {
         return user?.isAdmin ? <AdminTaskView /> : <TaskView />;
       case 'clockin':
         return <ClockInView />;
+      case 'timetracking':
+        return <AdminTimeTrackingView />;
       case 'payment':
         return user?.isAdmin ? <AdminPaymentView /> : <PaymentView />;
       case 'directory':

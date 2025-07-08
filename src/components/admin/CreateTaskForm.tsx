@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TaskStatus, TaskPaymentStatus } from '@/types';
-import { collection, addDoc, Timestamp, getDocs, query, setDoc, doc } from 'firebase/firestore';
+import { Task, TaskStatus, TaskPaymentStatus } from '@/types';
+import { collection, addDoc, Timestamp, getDocs, query, setDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { X, Plus } from 'lucide-react';
 import { notificationService } from '@/lib/notifications';
@@ -14,9 +14,10 @@ import { notificationService } from '@/lib/notifications';
 interface CreateTaskFormProps {
   onClose: () => void;
   onTaskCreated?: () => void;
+  editingTask?: Task | null;
 }
 
-export default function CreateTaskForm({ onClose, onTaskCreated }: CreateTaskFormProps) {
+export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: CreateTaskFormProps) {
   const { user } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
@@ -27,6 +28,28 @@ export default function CreateTaskForm({ onClose, onTaskCreated }: CreateTaskFor
     skills: [] as string[]
   });
   const [newSkill, setNewSkill] = useState('');
+  const isEditMode = !!editingTask;
+
+  // Populate form with editing data
+  useEffect(() => {
+    if (editingTask) {
+      setFormData({
+        name: editingTask.name || '',
+        description: editingTask.description || '',
+        amount: editingTask.amount.toString() || '',
+        deadline: editingTask.deadline ? new Date(editingTask.deadline).toISOString().split('T')[0] : '',
+        skills: editingTask.skills || []
+      });
+    } else {
+      setFormData({
+        name: '',
+        description: '',
+        amount: '',
+        deadline: '',
+        skills: []
+      });
+    }
+  }, [editingTask]);
 
   const handleAddSkill = () => {
     if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
@@ -76,46 +99,64 @@ export default function CreateTaskForm({ onClose, onTaskCreated }: CreateTaskFor
     try {
       setIsCreating(true);
       const now = new Date();
-      const taskId = await generateTaskId();
       
-      const newTask = {
-        name: formData.name,
-        description: formData.description,
-        amount: parseFloat(formData.amount),
-        deadline: new Date(formData.deadline),
-        skills: formData.skills,
-        status: TaskStatus.NOT_STARTED,
-        paymentStatus: TaskPaymentStatus.NOT_STARTED,
-        createdBy: user.uid,
-        createdByName: user.fullname,
-        createdAt: Timestamp.fromDate(now),
-        assignedTo: null,
-        assignedToName: null,
-        assignedToStaffId: null
-      };
+      if (isEditMode && editingTask) {
+        // Update existing task
+        const taskUpdates = {
+          name: formData.name,
+          description: formData.description,
+          amount: parseFloat(formData.amount),
+          deadline: Timestamp.fromDate(new Date(formData.deadline)),
+          skills: formData.skills,
+          updatedAt: Timestamp.fromDate(now),
+          updatedBy: user.uid,
+          updatedByName: user.fullname
+        };
 
-      // Use the generated taskId as the document ID
-      await setDoc(doc(db, 'tasks', taskId), newTask);
+        await updateDoc(doc(db, 'tasks', editingTask.id), taskUpdates);
+      } else {
+        // Create new task
+        const taskId = await generateTaskId();
+        
+        const newTask = {
+          name: formData.name,
+          description: formData.description,
+          amount: parseFloat(formData.amount),
+          deadline: new Date(formData.deadline),
+          skills: formData.skills,
+          status: TaskStatus.NOT_STARTED,
+          paymentStatus: TaskPaymentStatus.NOT_STARTED,
+          createdBy: user.uid,
+          createdByName: user.fullname,
+          createdAt: Timestamp.fromDate(now),
+          assignedTo: null,
+          assignedToName: null,
+          assignedToStaffId: null
+        };
 
-      // Fetch all users to notify about new task
-      try {
-        const usersSnapshot = await getDocs(query(collection(db, 'users')));
-        const allUsers = usersSnapshot.docs.map(doc => ({
-          userId: doc.id,
-          email: doc.data().email
-        }));
+        // Use the generated taskId as the document ID
+        await setDoc(doc(db, 'tasks', taskId), newTask);
 
-        // Send notifications to all users
-        await notificationService.notifyNewTask(formData.name, allUsers);
-      } catch (notificationError) {
-        console.warn('Failed to send new task notifications:', notificationError);
+        // Fetch all users to notify about new task
+        try {
+          const usersSnapshot = await getDocs(query(collection(db, 'users')));
+          const allUsers = usersSnapshot.docs.map(doc => ({
+            userId: doc.id,
+            email: doc.data().email
+          }));
+
+          // Send notifications to all users
+          await notificationService.notifyNewTask(formData.name, allUsers);
+        } catch (notificationError) {
+          console.warn('Failed to send new task notifications:', notificationError);
+        }
       }
 
       onTaskCreated?.();
       onClose();
     } catch (error) {
-      console.error('Error creating task:', error);
-      alert('Failed to create task. Please try again.');
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} task:`, error);
+      alert(`Failed to ${isEditMode ? 'update' : 'create'} task. Please try again.`);
     } finally {
       setIsCreating(false);
     }
@@ -126,7 +167,9 @@ export default function CreateTaskForm({ onClose, onTaskCreated }: CreateTaskFor
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white">
         <CardHeader className="border-b">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-semibold text-gray-900">Cipta Tugasan Baru</CardTitle>
+            <CardTitle className="text-xl font-semibold text-gray-900">
+              {isEditMode ? 'Edit Tugasan' : 'Cipta Tugasan Baru'}
+            </CardTitle>
             <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 hover:text-gray-700">
               <X className="h-4 w-4" />
             </Button>
@@ -249,7 +292,7 @@ export default function CreateTaskForm({ onClose, onTaskCreated }: CreateTaskFor
                 disabled={isCreating} 
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
               >
-                {isCreating ? 'Mencipta...' : 'Cipta Tugasan'}
+                {isCreating ? (isEditMode ? 'Mengemas kini...' : 'Mencipta...') : (isEditMode ? 'Kemas kini' : 'Cipta Tugasan')}
               </Button>
             </div>
           </form>

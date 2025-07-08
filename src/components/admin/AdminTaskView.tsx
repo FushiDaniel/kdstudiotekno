@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Task, TaskStatus, TaskPaymentStatus, TaskMessage, User } from '@/types';
-import { collection, query, onSnapshot, doc, updateDoc, where, addDoc, getDocs } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, updateDoc, where, addDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { Plus, Search, DollarSign, Clock, Users, X, CheckCircle, FileText, MessageCircle, Send, UserPlus } from 'lucide-react';
+import { Plus, Search, DollarSign, Clock, Users, X, CheckCircle, FileText, MessageCircle, Send, UserPlus, Edit, Trash2 } from 'lucide-react';
 import CreateTaskForm from './CreateTaskForm';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,6 +35,10 @@ export default function AdminTaskView() {
   const [assignedUserId, setAssignedUserId] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     // Simple query without orderBy to avoid index requirement
@@ -294,6 +298,43 @@ export default function AdminTaskView() {
     }
   };
 
+  const handleDeleteTask = async () => {
+    if (!taskToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteDoc(doc(db, 'tasks', taskToDelete.id));
+      
+      // Update local state
+      setTasks(prev => prev.filter(t => t.id !== taskToDelete.id));
+      
+      // Close modal and reset state
+      setShowDeleteConfirm(false);
+      setTaskToDelete(null);
+      
+      console.log(`Task ${taskToDelete.id} deleted`);
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Gagal memadamkan tugasan. Sila cuba lagi.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const canEditOrDelete = (task: Task) => {
+    return task.status === TaskStatus.NOT_STARTED && !task.assignedTo;
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setShowCreateForm(true);
+  };
+
+  const handleDeleteConfirm = (task: Task) => {
+    setTaskToDelete(task);
+    setShowDeleteConfirm(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -403,6 +444,9 @@ export default function AdminTaskView() {
                 setSelectedTask(updatedTask);
                 setAdjustedAmount(null);
               }}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleDeleteConfirm}
+              canEditOrDelete={canEditOrDelete}
             />
           ))
         )}
@@ -411,10 +455,15 @@ export default function AdminTaskView() {
       {/* Create Task Form */}
       {showCreateForm && (
         <CreateTaskForm 
-          onClose={() => setShowCreateForm(false)}
+          onClose={() => {
+            setShowCreateForm(false);
+            setEditingTask(null);
+          }}
           onTaskCreated={() => {
             // Tasks will be updated automatically via real-time listener
+            setEditingTask(null);
           }}
+          editingTask={editingTask}
         />
       )}
 
@@ -717,6 +766,52 @@ export default function AdminTaskView() {
           </Card>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && taskToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-md bg-white">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold text-gray-900">
+                Padam Tugasan
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-600">
+                Adakah anda pasti ingin memadamkan tugasan ini?
+              </p>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="font-medium text-gray-900">{taskToDelete.name}</p>
+                <p className="text-sm text-gray-600">ID: {taskToDelete.id}</p>
+              </div>
+              <p className="text-sm text-red-600">
+                Tindakan ini tidak boleh dibatalkan.
+              </p>
+              
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setTaskToDelete(null);
+                  }}
+                  className="flex-1"
+                >
+                  Batal
+                </Button>
+                <Button
+                  onClick={handleDeleteTask}
+                  disabled={isDeleting}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {isDeleting ? 'Memadamkan...' : 'Padam'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
@@ -726,9 +821,12 @@ interface AdminTaskCardProps {
   onViewDetail: () => void;
   onAssignTask: (task: Task) => void;
   onTaskUpdated: (task: Task) => void;
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (task: Task) => void;
+  canEditOrDelete: (task: Task) => boolean;
 }
 
-function AdminTaskCard({ task, onViewDetail, onAssignTask }: AdminTaskCardProps) {
+function AdminTaskCard({ task, onViewDetail, onAssignTask, onEditTask, onDeleteTask, canEditOrDelete }: AdminTaskCardProps) {
   const getStatusBadge = (status: TaskStatus) => {
     switch (status) {
       case TaskStatus.COMPLETED:
@@ -818,6 +916,30 @@ function AdminTaskCard({ task, onViewDetail, onAssignTask }: AdminTaskCardProps)
           >
             Lihat Detail
           </Button>
+          
+          {canEditOrDelete(task) && (
+            <>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => onEditTask(task)}
+                className="text-blue-600 border-blue-300 hover:bg-blue-50"
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </Button>
+              <Button 
+                variant="outline"
+                size="sm"
+                onClick={() => onDeleteTask(task)}
+                className="text-red-600 border-red-300 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Padam
+              </Button>
+            </>
+          )}
+          
           {!task.assignedTo && task.status === TaskStatus.NOT_STARTED && (
             <Button 
               onClick={() => onAssignTask(task)}

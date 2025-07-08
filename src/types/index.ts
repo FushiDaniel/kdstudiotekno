@@ -106,8 +106,15 @@ export interface ClockInRecord {
   clockOutTime?: Date;
   totalMinutes?: number;
   location?: string;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+  };
   notes?: string;
   date: string; // YYYY-MM-DD format
+  userFullName?: string;
+  userStaffId?: string;
 }
 
 export interface Notification {

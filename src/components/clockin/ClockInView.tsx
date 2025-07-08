@@ -97,11 +97,47 @@ export default function ClockInView() {
         throw new Error('Had 2 sesi sehari telah dicapai');
       }
 
+      // Check time restrictions (10am-10pm) for FT and PT users
+      const currentHour = now.getHours();
+      if (user.staffId?.startsWith('FT') || user.staffId?.startsWith('PT')) {
+        if (currentHour < 10 || currentHour >= 22) {
+          throw new Error('Clock in hanya dibenarkan antara 10:00 PG hingga 10:00 PTG');
+        }
+      }
+
+      // Get GPS coordinates
+      let locationData = 'Web App';
+      let coordinates = null;
+      
+      try {
+        if (navigator.geolocation) {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 60000
+            });
+          });
+          
+          coordinates = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy
+          };
+          
+          locationData = `${coordinates.latitude.toFixed(6)}, ${coordinates.longitude.toFixed(6)}`;
+        }
+      } catch (geoError) {
+        console.warn('Could not get location:', geoError);
+        // Continue with default location if GPS fails
+      }
+
       const newRecord = {
         userId: user.uid,
         clockInTime: Timestamp.fromDate(now),
         date: today,
-        location: 'Web App',
+        location: locationData,
+        coordinates: coordinates,
         userFullName: user.fullname,
         userStaffId: user.staffId
       };
