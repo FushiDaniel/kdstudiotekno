@@ -346,6 +346,34 @@ class NotificationService {
       taskId
     );
   }
+
+  async notifyAccountApproved(
+    userEmail: string,
+    userName: string
+  ): Promise<void> {
+    const title = 'Akaun Diluluskan! 🎉';
+    const message = `Tahniah ${userName}! Akaun anda telah diluluskan dan kini boleh menggunakan sistem KDstudio. Anda kini boleh log masuk dan mula mengambil tugasan.`;
+    
+    await this.sendEmailNotification(
+      userEmail,
+      title,
+      message
+    );
+  }
+
+  async notifyAccountRejected(
+    userEmail: string,
+    userName: string
+  ): Promise<void> {
+    const title = 'Permohonan Akaun Ditolak';
+    const message = `Maaf ${userName}, permohonan akaun anda tidak dapat diluluskan pada masa ini. Jika anda mempunyai sebarang pertanyaan, sila hubungi pentadbir sistem.`;
+    
+    await this.sendEmailNotification(
+      userEmail,
+      title,
+      message
+    );
+  }
 }
 
 export const notificationService = NotificationService.getInstance();

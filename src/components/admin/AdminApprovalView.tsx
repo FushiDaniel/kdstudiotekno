@@ -11,6 +11,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp } from 
 import { db } from '@/lib/firebase';
 import { formatDate } from '@/lib/utils';
 import { Search, CheckCircle, XCircle, Users, Clock, Mail, Phone, MapPin, Briefcase } from 'lucide-react';
+import { notificationService } from '@/lib/notifications';
 
 export default function AdminApprovalView() {
   const { user } = useAuth();
@@ -70,10 +71,27 @@ export default function AdminApprovalView() {
   const handleApproveUser = async (userId: string) => {
     setIsUpdating(userId);
     try {
+      // Find the user to get their email and name
+      const userToApprove = pendingUsers.find(u => u.uid === userId);
+      if (!userToApprove) {
+        throw new Error('User not found');
+      }
+
       await updateDoc(doc(db, 'users', userId), {
         isApproved: true,
         updatedAt: Timestamp.fromDate(new Date())
       });
+
+      // Send approval email notification
+      try {
+        await notificationService.notifyAccountApproved(
+          userToApprove.email,
+          userToApprove.fullname
+        );
+      } catch (emailError) {
+        console.warn('Failed to send approval email:', emailError);
+        // Don't fail the approval process if email fails
+      }
     } catch (error) {
       console.error('Error approving user:', error);
       alert('Gagal meluluskan pengguna. Sila cuba lagi.');
@@ -89,12 +107,29 @@ export default function AdminApprovalView() {
     
     setIsUpdating(userId);
     try {
+      // Find the user to get their email and name
+      const userToReject = pendingUsers.find(u => u.uid === userId);
+      if (!userToReject) {
+        throw new Error('User not found');
+      }
+
       // For now, we'll just mark them as rejected. In a real app, you might want to delete or mark differently
       await updateDoc(doc(db, 'users', userId), {
         isApproved: false,
         rejectedAt: Timestamp.fromDate(new Date()),
         updatedAt: Timestamp.fromDate(new Date())
       });
+
+      // Send rejection email notification
+      try {
+        await notificationService.notifyAccountRejected(
+          userToReject.email,
+          userToReject.fullname
+        );
+      } catch (emailError) {
+        console.warn('Failed to send rejection email:', emailError);
+        // Don't fail the rejection process if email fails
+      }
     } catch (error) {
       console.error('Error rejecting user:', error);
       alert('Gagal menolak pengguna. Sila cuba lagi.');
