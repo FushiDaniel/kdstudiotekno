@@ -201,90 +201,112 @@ export default function DirectoryView() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          {activeTab === 'directory' ? 'Directory Staf' : 
-           activeTab === 'pending' ? 'Kelulusan Pengguna' : 
-           'Pengguna Diluluskan'}
-        </h1>
-        <p className="text-gray-600">
-          {activeTab === 'directory' ? 'Direktori ahli pasukan KDStudio' : 
-           activeTab === 'pending' ? 'Pengguna menunggu kelulusan' : 
-           'Pengguna yang telah diluluskan'}
-        </p>
+      <div className="text-center mb-12">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            {activeTab === 'directory' ? 'Direktori Tim' : 
+             activeTab === 'pending' ? 'Pengguna Menunggu' : 
+             'Pengguna Diluluskan'}
+          </h1>
+          <p className="text-lg text-gray-600">
+            {activeTab === 'directory' ? 'Kenali ahli pasukan KDStudio yang berbakat' : 
+             activeTab === 'pending' ? 'Pengguna menunggu kelulusan dari admin' : 
+             'Pengguna yang telah diluluskan untuk mengakses sistem'}
+          </p>
+        </div>
       </div>
 
       {/* Tab Navigation - Show only for admins */}
       {currentUser?.isAdmin && (
-        <div className="mb-6">
-          <div className="flex space-x-2">
-            <Button
-              variant={activeTab === 'directory' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('directory')}
-              className="flex items-center gap-2"
-            >
-              <Users className="h-4 w-4" />
-              Directory ({users.length})
-            </Button>
-            <Button
-              variant={activeTab === 'pending' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('pending')}
-              className="flex items-center gap-2"
-            >
-              <Clock className="h-4 w-4" />
-              Menunggu ({pendingUsers.length})
-            </Button>
-            <Button
-              variant={activeTab === 'approved' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('approved')}
-              className="flex items-center gap-2"
-            >
-              <UserCheck className="h-4 w-4" />
-              Diluluskan ({approvedUsers.length})
-            </Button>
+        <div className="mb-8">
+          <div className="flex justify-center">
+            <div className="bg-gray-100 rounded-xl p-1 inline-flex">
+              <Button
+                variant={activeTab === 'directory' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('directory')}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all ${
+                  activeTab === 'directory' 
+                    ? 'bg-white shadow-sm text-gray-900' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Users className="h-4 w-4" />
+                Directory ({users.length})
+              </Button>
+              <Button
+                variant={activeTab === 'pending' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('pending')}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all ${
+                  activeTab === 'pending' 
+                    ? 'bg-white shadow-sm text-gray-900' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <Clock className="h-4 w-4" />
+                Menunggu ({pendingUsers.length})
+              </Button>
+              <Button
+                variant={activeTab === 'approved' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('approved')}
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg transition-all ${
+                  activeTab === 'approved' 
+                    ? 'bg-white shadow-sm text-gray-900' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <UserCheck className="h-4 w-4" />
+                Diluluskan ({approvedUsers.length})
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Search */}
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Cari nama, email, ID staf, atau kemahiran..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      <div className="mb-8">
+        <div className="max-w-lg mx-auto">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Input
+              placeholder="Cari nama, email, ID staf, atau kemahiran..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 pr-4 py-3 rounded-xl border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+            />
+          </div>
         </div>
       </div>
 
       {/* Stats - Only show for directory tab */}
       {activeTab === 'directory' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardContent className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <Card className="border-0 shadow-lg bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardContent className="p-6">
               <div className="flex items-center">
-                <Users className="h-8 w-8 text-blue-600 mr-3" />
+                <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mr-4">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Jumlah Staf</p>
-                  <p className="text-2xl font-bold">{users.length}</p>
+                  <p className="text-3xl font-bold text-gray-900">{users.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          <Card className="border-0 shadow-lg bg-gradient-to-r from-green-50 to-emerald-50">
+            <CardContent className="p-6">
               <div className="flex items-center">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center mr-4">
+                  <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  </div>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Dlm Talian</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-3xl font-bold text-gray-900">
                     {users.filter(u => u.availabilityStatus === 'dalam_talian').length}
                   </p>
                 </div>
@@ -292,15 +314,17 @@ export default function DirectoryView() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          <Card className="border-0 shadow-lg bg-gradient-to-r from-gray-50 to-slate-50">
+            <CardContent className="p-6">
               <div className="flex items-center">
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
-                  <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                <div className="w-12 h-12 bg-gray-500 rounded-xl flex items-center justify-center mr-4">
+                  <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                    <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
+                  </div>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-600">Tdk Aktif</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-3xl font-bold text-gray-900">
                     {users.filter(u => u.availabilityStatus === 'tidak_aktif').length}
                   </p>
                 </div>
@@ -311,7 +335,7 @@ export default function DirectoryView() {
       )}
 
       {/* User Grid */}
-      <div className={activeTab === 'directory' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-6"}>
+      <div className={activeTab === 'directory' ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8" : "space-y-6"}>
         {filteredUsers.length === 0 ? (
           <div className={activeTab === 'directory' ? "col-span-full text-center py-8" : "text-center py-8"}>
             <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
@@ -482,95 +506,106 @@ interface UserCardProps {
 function UserCard({ user, onClick, showDetails }: UserCardProps) {
   return (
     <Card 
-      className="hover:shadow-md transition-shadow cursor-pointer" 
+      className="group hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.02] border-0 bg-white shadow-sm" 
       onClick={onClick}
     >
-      <CardContent className="p-6">
-        <div className="flex items-start space-x-4">
-          {/* Profile Image */}
-          <div className="relative">
-            {user.profileImageUrl ? (
-              <img 
-                src={user.profileImageUrl} 
-                alt={user.fullname}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold">
-                  {user.fullname?.charAt(0) || 'U'}
-                </span>
-              </div>
-            )}
-          </div>
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <h3 className="font-semibold text-gray-900 truncate">
+      <CardContent className="p-0">
+        {/* Card Header with Profile */}
+        <div className="relative bg-gradient-to-r from-blue-500 to-purple-600 p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              {/* Profile Image */}
+              {user.profileImageUrl ? (
+                <img 
+                  src={user.profileImageUrl} 
+                  alt={user.fullname}
+                  className="w-16 h-16 rounded-full object-cover border-3 border-white shadow-lg"
+                />
+              ) : (
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center border-3 border-white shadow-lg">
+                  <span className="text-2xl font-bold">
+                    {user.fullname?.charAt(0) || 'U'}
+                  </span>
+                </div>
+              )}
+              
+              {/* Basic Info */}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-lg truncate">
                   {user.fullname || 'Nama Tidak Disetkan'}
                 </h3>
-                <p className="text-sm text-gray-600">{user.staffId}</p>
+                <p className="text-white/80 text-sm">{user.staffId}</p>
               </div>
-              <Badge className={getStatusColor(user.availabilityStatus)}>
+            </div>
+            
+            {/* Status Badge */}
+            <div className="flex-shrink-0">
+              <Badge className={`${getStatusColor(user.availabilityStatus)} shadow-sm`}>
                 {getStatusText(user.availabilityStatus)}
               </Badge>
             </div>
+          </div>
+        </div>
 
-            <div className="space-y-2 text-sm text-gray-600">
-              {user.email && (
-                <div className="flex items-center">
-                  <Mail className="h-3 w-3 mr-2 flex-shrink-0" />
-                  <span className="truncate">{user.email}</span>
-                </div>
-              )}
-              
-              {user.phoneNumber && (
-                <div className="flex items-center">
-                  <Phone className="h-3 w-3 mr-2 flex-shrink-0" />
-                  <span>{user.phoneNumber}</span>
-                </div>
-              )}
-              
-              {showDetails && user.homeAddress && (
-                <div className="flex items-center">
-                  <MapPin className="h-3 w-3 mr-2 flex-shrink-0" />
-                  <span className="truncate">{user.homeAddress}</span>
-                </div>
-              )}
-            </div>
-
-            {user.skills && user.skills.length > 0 && (
-              <div className="mt-3">
-                <div className="flex flex-wrap gap-1">
-                  {user.skills.slice(0, 3).map((skill, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {skill}
-                    </Badge>
-                  ))}
-                  {user.skills.length > 3 && (
-                    <Badge variant="secondary" className="text-xs">
-                      +{user.skills.length - 3}
-                    </Badge>
-                  )}
-                </div>
+        {/* Card Body */}
+        <div className="p-6">
+          {/* Contact Info */}
+          <div className="space-y-3 mb-4">
+            {user.email && (
+              <div className="flex items-center text-gray-600">
+                <Mail className="h-4 w-4 mr-3 text-gray-400" />
+                <span className="truncate text-sm">{user.email}</span>
               </div>
             )}
-
-            {user.bio && (
-              <div className="mt-3">
-                <p className="text-sm text-gray-700 line-clamp-2">{user.bio}</p>
+            
+            {user.phoneNumber && (
+              <div className="flex items-center text-gray-600">
+                <Phone className="h-4 w-4 mr-3 text-gray-400" />
+                <span className="text-sm">{user.phoneNumber}</span>
               </div>
             )}
-
-            {user.isAdmin && (
-              <div className="mt-2">
-                <Badge className="bg-purple-100 text-purple-800">
-                  Admin
-                </Badge>
+            
+            {showDetails && user.homeAddress && (
+              <div className="flex items-center text-gray-600">
+                <MapPin className="h-4 w-4 mr-3 text-gray-400" />
+                <span className="truncate text-sm">{user.homeAddress}</span>
               </div>
             )}
           </div>
+
+          {/* Bio */}
+          {user.bio && (
+            <div className="mb-4">
+              <p className="text-sm text-gray-700 line-clamp-3 leading-relaxed">{user.bio}</p>
+            </div>
+          )}
+
+          {/* Skills */}
+          {user.skills && user.skills.length > 0 && (
+            <div className="mb-4">
+              <div className="flex flex-wrap gap-2">
+                {user.skills.slice(0, 4).map((skill, index) => (
+                  <Badge key={index} variant="secondary" className="text-xs bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    {skill}
+                  </Badge>
+                ))}
+                {user.skills.length > 4 && (
+                  <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-700">
+                    +{user.skills.length - 4}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Admin Badge */}
+          {user.isAdmin && (
+            <div className="mt-4 pt-4 border-t">
+              <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                <span className="text-xs font-medium">Admin</span>
+              </Badge>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
