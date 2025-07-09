@@ -580,9 +580,9 @@ export default function AdminTaskView() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Penerangan</h3>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <pre className="whitespace-pre-wrap text-gray-700 leading-relaxed font-sans">
-                    {selectedTask.description}
-                  </pre>
+                  <div className="whitespace-pre-wrap text-gray-700 leading-relaxed font-sans">
+                    {formatMessageWithLinks(selectedTask.description)}
+                  </div>
                 </div>
               </div>
 
@@ -622,7 +622,7 @@ export default function AdminTaskView() {
               {selectedTask.submissionNotes && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Nota Penyerahan</h3>
-                  <p className="text-gray-700">{selectedTask.submissionNotes}</p>
+                  <div className="text-gray-700">{formatMessageWithLinks(selectedTask.submissionNotes)}</div>
                 </div>
               )}
 

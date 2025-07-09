@@ -398,6 +398,14 @@ export default function DirectoryView() {
                 </div>
               </div>
 
+              {/* Bio */}
+              {selectedUser.bio && (
+                <div className="mt-6">
+                  <h4 className="font-medium text-gray-900 mb-2">Bio</h4>
+                  <p className="text-gray-700">{selectedUser.bio}</p>
+                </div>
+              )}
+
               {/* Contact Information */}
               <div className="mt-6 space-y-4">
                 <h4 className="font-medium text-gray-900">Maklumat Hubungan</h4>
@@ -546,6 +554,12 @@ function UserCard({ user, onClick, showDetails }: UserCardProps) {
                     </Badge>
                   )}
                 </div>
+              </div>
+            )}
+
+            {user.bio && (
+              <div className="mt-3">
+                <p className="text-sm text-gray-700 line-clamp-2">{user.bio}</p>
               </div>
             )}
 

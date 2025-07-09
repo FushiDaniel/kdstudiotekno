@@ -264,16 +264,16 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
           {task.status === TaskStatus.NEEDS_REVISION && task.adminFeedback && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-red-800 mb-2">Maklum Balas Pembetulan</h3>
-              <p className="text-red-700">{task.adminFeedback}</p>
+              <div className="text-red-700">{formatMessageWithLinks(task.adminFeedback)}</div>
             </div>
           )}
 
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Penerangan</h3>
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <pre className="whitespace-pre-wrap text-gray-700 leading-relaxed font-sans">
-                {task.description}
-              </pre>
+              <div className="whitespace-pre-wrap text-gray-700 leading-relaxed font-sans">
+                {formatMessageWithLinks(task.description)}
+              </div>
             </div>
           </div>
 

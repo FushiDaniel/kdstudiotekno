@@ -107,31 +107,46 @@ export default function ClockInView() {
         }
       }
 
-      // Get GPS coordinates
+      // Check if geolocation is supported
+      if (!navigator.geolocation) {
+        throw new Error('Geolocation tidak disokong oleh browser ini');
+      }
+
+      // Get GPS coordinates - REQUIRED
       let locationData = 'Web App';
       let coordinates = null;
       
       try {
-        if (navigator.geolocation) {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 60000
-            });
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000
           });
-          
-          coordinates = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-            accuracy: position.coords.accuracy
-          };
-          
-          locationData = `${coordinates.latitude.toFixed(6)}, ${coordinates.longitude.toFixed(6)}`;
+        });
+        
+        coordinates = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        };
+        
+        locationData = `${coordinates.latitude.toFixed(6)}, ${coordinates.longitude.toFixed(6)}`;
+      } catch (geoError: any) {
+        console.error('Location error:', geoError);
+        let errorMessage = 'Tidak dapat mengakses lokasi. ';
+        
+        if (geoError.code === 1) {
+          errorMessage += 'Sila benarkan akses lokasi untuk clock in. Pergi ke tetapan browser dan aktifkan lokasi untuk tapak web ini.';
+        } else if (geoError.code === 2) {
+          errorMessage += 'Kedudukan tidak tersedia. Sila cuba lagi.';
+        } else if (geoError.code === 3) {
+          errorMessage += 'Permintaan lokasi tamat masa. Sila cuba lagi.';
+        } else {
+          errorMessage += 'Ralat yang tidak diketahui. Sila cuba lagi.';
         }
-      } catch (geoError) {
-        console.warn('Could not get location:', geoError);
-        // Continue with default location if GPS fails
+        
+        throw new Error(errorMessage);
       }
 
       const newRecord = {
