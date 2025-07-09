@@ -11,6 +11,13 @@ import { formatTime, formatDate } from '@/lib/utils';
 import { Play, Square, Calendar, MapPin, Clock, Users } from 'lucide-react';
 import AdminTimeTrackingView from '@/components/admin/AdminTimeTrackingView';
 
+// Helper function to get local date string in YYYY-MM-DD format
+const getLocalDateString = (date: Date = new Date()): string => {
+  return date.getFullYear() + '-' + 
+    String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+    String(date.getDate()).padStart(2, '0');
+};
+
 export default function ClockInView() {
   const { user } = useAuth();
   const [clockInRecords, setClockInRecords] = useState<ClockInRecord[]>([]);
@@ -54,7 +61,7 @@ export default function ClockInView() {
             clockInTime: data.clockInTime?.toDate() || null,
             clockOutTime: data.clockOutTime?.toDate() || null,
             location: location,
-            date: data.date || new Date().toISOString().split('T')[0]
+            date: data.date || getLocalDateString()
           };
         }) as ClockInRecord[];
         
@@ -83,7 +90,8 @@ export default function ClockInView() {
     try {
       setLoading(true);
       const now = new Date();
-      const today = now.toISOString().split('T')[0];
+      // Use local time instead of UTC for date comparison
+      const today = getLocalDateString(now);
       
       const existingActive = clockInRecords.find(record => 
         record.date === today && !record.clockOutTime
@@ -202,7 +210,7 @@ export default function ClockInView() {
   };
 
   const getTodayTotalMinutes = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     return clockInRecords
       .filter(record => record.date === today && record.totalMinutes)
       .reduce((total, record) => total + (record.totalMinutes || 0), 0);
@@ -261,7 +269,7 @@ export default function ClockInView() {
             {getTodayTotalMinutes() > 0 ? formatDuration(getTodayTotalMinutes()) : '0j 0m'}
           </div>
           <div className="flex justify-between text-sm text-gray-600 mt-2">
-            <span>Sesi: {clockInRecords.filter(r => r.date === new Date().toISOString().split('T')[0]).length}/2</span>
+            <span>Sesi: {clockInRecords.filter(r => r.date === getLocalDateString()).length}/2</span>
             <span>Had: 5j 0m</span>
           </div>
         </CardContent>
