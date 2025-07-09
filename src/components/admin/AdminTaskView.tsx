@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Task, TaskStatus, TaskPaymentStatus, TaskMessage, User } from '@/types';
 import { collection, query, onSnapshot, doc, updateDoc, where, addDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatMessageWithLinks } from '@/lib/utils';
 import { Plus, Search, DollarSign, Clock, Users, X, CheckCircle, FileText, MessageCircle, Send, UserPlus, Edit, Trash2 } from 'lucide-react';
 import CreateTaskForm from './CreateTaskForm';
 import { Timestamp } from 'firebase/firestore';
@@ -514,14 +514,14 @@ export default function AdminTaskView() {
                           className={`flex ${message.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-xs px-4 py-2 rounded-lg ${
+                            className={`max-w-xs px-4 py-2 rounded-lg break-words ${
                               message.senderId === user?.uid
                                 ? 'bg-blue-500 text-white'
                                 : 'bg-gray-200 text-gray-800'
                             }`}
                           >
                             <p className="text-sm font-medium mb-1">{message.senderName}</p>
-                            <p className="text-sm">{message.message}</p>
+                            <div className="text-sm">{formatMessageWithLinks(message.message)}</div>
                             <p className="text-xs opacity-75 mt-1">
                               {message.timestamp.toLocaleTimeString('ms-MY', {
                                 hour: '2-digit',

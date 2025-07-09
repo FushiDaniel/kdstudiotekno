@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,6 @@ import { Clock, MapPin, Search, Calendar, Users, Filter } from 'lucide-react';
 export default function AdminTimeTrackingView() {
   const [clockInRecords, setClockInRecords] = useState<ClockInRecord[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [filteredRecords, setFilteredRecords] = useState<ClockInRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<string>('all');
@@ -84,7 +83,7 @@ export default function AdminTimeTrackingView() {
   }, []);
 
   // Filter records based on search criteria
-  useEffect(() => {
+  const filteredRecords = useMemo(() => {
     let filtered = clockInRecords;
 
     // Filter by search term (user name or staff ID)
@@ -105,7 +104,7 @@ export default function AdminTimeTrackingView() {
       filtered = filtered.filter(record => record.date === selectedDate);
     }
 
-    setFilteredRecords(filtered);
+    return filtered;
   }, [clockInRecords, searchTerm, selectedUser, selectedDate]);
 
   const formatDuration = (minutes: number) => {
@@ -128,12 +127,16 @@ export default function AdminTimeTrackingView() {
     return formatDuration(totalMinutes);
   };
 
-  const openMapModal = (record: ClockInRecord) => {
+  const openMapModal = useCallback((record: ClockInRecord) => {
     setSelectedRecord(record);
     setShowMap(true);
-  };
+  }, []);
 
-  const MapModal = () => {
+  const closeMapModal = useCallback(() => {
+    setShowMap(false);
+  }, []);
+
+  const MapModal = useMemo(() => {
     if (!selectedRecord || !selectedRecord.coordinates) return null;
 
     const { latitude, longitude } = selectedRecord.coordinates;
@@ -149,7 +152,7 @@ export default function AdminTimeTrackingView() {
               </CardTitle>
               <Button 
                 variant="ghost" 
-                onClick={() => setShowMap(false)}
+                onClick={closeMapModal}
                 className="text-gray-500 hover:text-gray-700"
               >
                 ✕
@@ -159,6 +162,7 @@ export default function AdminTimeTrackingView() {
           <CardContent className="p-0">
             <div className="h-96">
               <iframe
+                key={`map-${selectedRecord.id}`}
                 src={mapUrl}
                 width="100%"
                 height="100%"
@@ -188,7 +192,7 @@ export default function AdminTimeTrackingView() {
         </Card>
       </div>
     );
-  };
+  }, [selectedRecord, closeMapModal]);
 
   if (loading) {
     return (
@@ -387,7 +391,7 @@ export default function AdminTimeTrackingView() {
       </Card>
 
       {/* Map Modal */}
-      {showMap && <MapModal />}
+      {showMap && MapModal}
     </div>
   );
 }

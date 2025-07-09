@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task, TaskStatus, TaskMessage } from '@/types';
 import { doc, updateDoc, Timestamp, collection, query, where, onSnapshot, addDoc, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatMessageWithLinks } from '@/lib/utils';
 import { ArrowLeft, Send, MessageCircle, Users } from 'lucide-react';
 
 interface TaskDetailViewProps {
@@ -198,14 +198,14 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
                       className={`flex ${message.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-xs px-4 py-2 rounded-lg ${
+                        className={`max-w-xs px-4 py-2 rounded-lg break-words ${
                           message.senderId === user?.uid
                             ? 'bg-blue-500 text-white'
                             : 'bg-gray-200 text-gray-800'
                         }`}
                       >
                             <p className="text-sm font-medium mb-1">{message.senderName}</p>
-                        <p className="text-sm">{message.message}</p>
+                        <div className="text-sm">{formatMessageWithLinks(message.message)}</div>
                         <p className="text-xs opacity-75 mt-1">
                           {message.timestamp.toLocaleTimeString('ms-MY', {
                             hour: '2-digit',
