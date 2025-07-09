@@ -53,16 +53,16 @@ export function formatMessageWithLinks(message: string): React.ReactNode {
   
   return parts.map((part, index) => {
     if (part.match(urlRegex)) {
-      return (
-        <a
-          key={index}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 underline break-all"
-        >
-          {part}
-        </a>
+      return React.createElement(
+        'a',
+        {
+          key: index,
+          href: part,
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          className: 'text-blue-600 hover:text-blue-800 underline break-all'
+        },
+        part
       );
     }
     return part;
