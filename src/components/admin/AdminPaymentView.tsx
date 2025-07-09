@@ -342,6 +342,11 @@ function PaymentTaskCard({ task, users, onApprove, onDeny, isProcessing, getPaym
               </Badge>
             </div>
             <p className="text-sm text-gray-600 mb-3">{task.description}</p>
+            <div className="mb-3">
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                ID Tugasan: {task.id}
+              </span>
+            </div>
             <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
               <div className="flex items-center">
                 <Users className="h-4 w-4 mr-2" />
@@ -400,10 +405,14 @@ function PaymentTaskCard({ task, users, onApprove, onDeny, isProcessing, getPaym
             <div className="text-2xl font-bold text-gray-900 mb-2">
               {formatCurrency(task.amount)}
               {task.originalAmount && task.originalAmount !== task.amount && (
-                <div className="text-sm text-red-600 font-normal">
+                <div className="text-sm font-normal">
                   Asal: <span className="line-through">{formatCurrency(task.originalAmount)}</span>
-                  <span className="ml-2 bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                    Penalti Dikenakan
+                  <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                    task.amount > task.originalAmount 
+                      ? 'bg-blue-100 text-blue-800' 
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {task.amount > task.originalAmount ? 'Bonus Tambahan' : 'Potongan Dibuat'}
                   </span>
                 </div>
               )}

@@ -206,14 +206,14 @@ export default function DirectoryView() {
       <div className="text-center mb-12">
         <div className="max-w-2xl mx-auto">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            {activeTab === 'directory' ? 'Direktori Tim' : 
-             activeTab === 'pending' ? 'Pengguna Menunggu' : 
-             'Pengguna Diluluskan'}
+            {activeTab === 'directory' ? 'Direktori Staf' : 
+             activeTab === 'pending' ? 'Permohonan Keahlian' : 
+             'Ahli Diluluskan'}
           </h1>
           <p className="text-lg text-gray-600">
-            {activeTab === 'directory' ? 'Kenali ahli pasukan KDStudio yang berbakat' : 
-             activeTab === 'pending' ? 'Pengguna menunggu kelulusan dari admin' : 
-             'Pengguna yang telah diluluskan untuk mengakses sistem'}
+            {activeTab === 'directory' ? 'Senarai ahli pasukan KDStudio' : 
+             activeTab === 'pending' ? 'Senarai permohonan yang menunggu kelulusan' : 
+             'Senarai ahli yang telah diluluskan'}
           </p>
         </div>
       </div>
@@ -222,42 +222,42 @@ export default function DirectoryView() {
       {currentUser?.isAdmin && (
         <div className="mb-6">
           <div className="flex justify-center">
-            <div className="border border-gray-200 rounded-lg p-1 inline-flex bg-white">
+            <div className="border border-gray-200 rounded-lg p-1 inline-flex bg-white overflow-x-auto">
               <Button
                 variant={activeTab === 'directory' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('directory')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                className={`flex items-center gap-1 px-3 py-2 rounded-md transition-all text-sm whitespace-nowrap ${
                   activeTab === 'directory' 
                     ? 'bg-black text-white' 
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
                 <Users className="h-4 w-4" />
-                Directory ({users.length})
+                <span className="hidden sm:inline">Direktori</span> ({users.length})
               </Button>
               <Button
                 variant={activeTab === 'pending' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('pending')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                className={`flex items-center gap-1 px-3 py-2 rounded-md transition-all text-sm whitespace-nowrap ${
                   activeTab === 'pending' 
                     ? 'bg-black text-white' 
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
                 <Clock className="h-4 w-4" />
-                Menunggu ({pendingUsers.length})
+                <span className="hidden sm:inline">Permohonan</span> ({pendingUsers.length})
               </Button>
               <Button
                 variant={activeTab === 'approved' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('approved')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all ${
+                className={`flex items-center gap-1 px-3 py-2 rounded-md transition-all text-sm whitespace-nowrap ${
                   activeTab === 'approved' 
                     ? 'bg-black text-white' 
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
                 <UserCheck className="h-4 w-4" />
-                Diluluskan ({approvedUsers.length})
+                <span className="hidden sm:inline">Diluluskan</span> ({approvedUsers.length})
               </Button>
             </div>
           </div>
@@ -270,7 +270,7 @@ export default function DirectoryView() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Cari nama, email, ID staf, atau kemahiran..."
+              placeholder="Cari mengikut nama, emel, ID staf atau kemahiran..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border-gray-200 focus:border-gray-400 focus:ring-1 focus:ring-gray-400"
@@ -289,7 +289,7 @@ export default function DirectoryView() {
                   <Users className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Jumlah Staf</p>
+                  <p className="text-sm font-medium text-gray-600">Bilangan Staf</p>
                   <p className="text-2xl font-bold text-gray-900">{users.length}</p>
                 </div>
               </div>
@@ -305,7 +305,7 @@ export default function DirectoryView() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Dlm Talian</p>
+                  <p className="text-sm font-medium text-gray-600">Dalam Talian</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {users.filter(u => u.availabilityStatus === 'dalam_talian').length}
                   </p>
@@ -323,7 +323,7 @@ export default function DirectoryView() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Tdk Aktif</p>
+                  <p className="text-sm font-medium text-gray-600">Tidak Aktif</p>
                   <p className="text-2xl font-bold text-gray-900">
                     {users.filter(u => u.availabilityStatus === 'tidak_aktif').length}
                   </p>
@@ -342,8 +342,8 @@ export default function DirectoryView() {
             <p className="text-gray-500">
               {searchTerm ? `Tiada hasil untuk "${searchTerm}"` : 
                activeTab === 'directory' ? 'Tiada staf dalam direktori' :
-               activeTab === 'pending' ? 'Tiada pengguna menunggu kelulusan' :
-               'Tiada pengguna yang diluluskan'}
+               activeTab === 'pending' ? 'Tiada permohonan yang menunggu' :
+               'Tiada ahli yang diluluskan'}
             </p>
           </div>
         ) : (

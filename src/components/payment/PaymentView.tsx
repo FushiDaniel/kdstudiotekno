@@ -347,10 +347,14 @@ function PaymentTaskCard({ task }: PaymentTaskCardProps) {
           <div className="text-right">
             <div className="text-lg font-bold">{formatCurrency(task.amount)}</div>
             {task.originalAmount && task.originalAmount !== task.amount && (
-              <div className="text-sm text-red-600 mb-2">
+              <div className="text-sm mb-2">
                 Asal: <span className="line-through">{formatCurrency(task.originalAmount)}</span>
-                <span className="ml-2 bg-red-100 text-red-800 px-2 py-1 rounded text-xs">
-                  Penalti Dikenakan
+                <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                  task.amount > task.originalAmount 
+                    ? 'bg-blue-100 text-blue-800' 
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {task.amount > task.originalAmount ? 'Bonus Tambahan' : 'Potongan Dibuat'}
                 </span>
               </div>
             )}
