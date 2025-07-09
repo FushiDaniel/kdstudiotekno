@@ -336,21 +336,21 @@ function PaymentTaskCard({ task, users, onApprove, onDeny, isProcessing, getPaym
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h3 className="font-semibold text-gray-900">{task.name}</h3>
+              <h3 className="font-semibold text-gray-900 break-words flex-1">{task.name}</h3>
               <Badge className={paymentBadge.color}>
                 {paymentBadge.label}
               </Badge>
             </div>
-            <p className="text-sm text-gray-600 mb-3">{task.description}</p>
+            <p className="text-sm text-gray-600 mb-3 break-words overflow-wrap-anywhere">{task.description}</p>
             <div className="mb-3">
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded break-all">
                 ID Tugasan: {task.id}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-              <div className="flex items-center">
-                <Users className="h-4 w-4 mr-2" />
-                <span>{task.assignedToName} ({task.assignedToStaffId})</span>
+              <div className="flex items-center min-w-0">
+                <Users className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="truncate">{task.assignedToName} ({task.assignedToStaffId})</span>
               </div>
               <div className="flex items-center">
                 <Calendar className="h-4 w-4 mr-2" />

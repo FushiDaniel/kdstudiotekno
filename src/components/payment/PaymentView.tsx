@@ -340,9 +340,9 @@ function PaymentTaskCard({ task }: PaymentTaskCardProps) {
     <Card className="border-l-4 border-l-blue-500">
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="font-semibold text-gray-900">{task.name}</h3>
-            <p className="text-sm text-gray-600">ID: {task.id}</p>
+          <div className="min-w-0 flex-1 mr-4">
+            <h3 className="font-semibold text-gray-900 break-words">{task.name}</h3>
+            <p className="text-sm text-gray-600 font-mono break-all">ID: {task.id}</p>
           </div>
           <div className="text-right">
             <div className="text-lg font-bold">{formatCurrency(task.amount)}</div>

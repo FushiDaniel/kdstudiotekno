@@ -60,7 +60,7 @@ export function formatMessageWithLinks(message: string): React.ReactNode {
           href: part,
           target: '_blank',
           rel: 'noopener noreferrer',
-          className: 'text-blue-600 hover:text-blue-800 underline break-all'
+          className: 'text-blue-600 hover:text-blue-800 underline break-words overflow-wrap-anywhere'
         },
         part
       );
