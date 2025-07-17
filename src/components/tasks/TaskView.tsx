@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task, TaskStatus } from '@/types';
 import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatMessageWithLinks } from '@/lib/utils';
 import { Clock, DollarSign, FileText, CheckCircle } from 'lucide-react';
 import TaskDetailView from './TaskDetailView';
 
@@ -253,7 +253,7 @@ function UserTaskCard({ task, onTaskSelect, getStatusColor, getStatusBadge }: Us
       <CardContent className="pt-0">
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
           <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed font-sans max-h-24 overflow-y-auto break-words overflow-wrap-anywhere">
-            {task.description}
+            {formatMessageWithLinks(task.description)}
           </div>
         </div>
         
@@ -316,7 +316,7 @@ function OpenTaskCard({ task, onTakeTask, onTaskSelect, getStatusColor, getStatu
       <CardContent className="pt-0">
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
           <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed font-sans max-h-24 overflow-y-auto break-words overflow-wrap-anywhere">
-            {task.description}
+            {formatMessageWithLinks(task.description)}
           </div>
         </div>
         

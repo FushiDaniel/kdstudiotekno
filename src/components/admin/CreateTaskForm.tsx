@@ -28,6 +28,7 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
     skills: [] as string[]
   });
   const [newSkill, setNewSkill] = useState('');
+  const [sendNotification, setSendNotification] = useState(true);
   const isEditMode = !!editingTask;
 
   // Populate form with editing data
@@ -137,18 +138,20 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
         // Use the generated taskId as the document ID
         await setDoc(doc(db, 'tasks', taskId), newTask);
 
-        // Fetch all users to notify about new task
-        try {
-          const usersSnapshot = await getDocs(query(collection(db, 'users')));
-          const allUsers = usersSnapshot.docs.map(doc => ({
-            userId: doc.id,
-            email: doc.data().email
-          }));
+        // Send notifications to all users if enabled
+        if (sendNotification) {
+          try {
+            const usersSnapshot = await getDocs(query(collection(db, 'users')));
+            const allUsers = usersSnapshot.docs.map(doc => ({
+              userId: doc.id,
+              email: doc.data().email
+            }));
 
-          // Send notifications to all users
-          await notificationService.notifyNewTask(formData.name, allUsers);
-        } catch (notificationError) {
-          console.warn('Failed to send new task notifications:', notificationError);
+            // Send notifications to all users
+            await notificationService.notifyNewTask(formData.name, allUsers);
+          } catch (notificationError) {
+            console.warn('Failed to send new task notifications:', notificationError);
+          }
         }
       }
 
@@ -277,6 +280,21 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
                 </div>
               )}
             </div>
+
+            {!isEditMode && (
+              <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
+                <input
+                  type="checkbox"
+                  id="sendNotification"
+                  checked={sendNotification}
+                  onChange={(e) => setSendNotification(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <label htmlFor="sendNotification" className="text-sm font-medium text-gray-900">
+                  Hantar pemberitahuan kepada semua pengguna
+                </label>
+              </div>
+            )}
 
             <div className="flex space-x-2 pt-4 border-t">
               <Button 
