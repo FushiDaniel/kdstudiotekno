@@ -235,8 +235,11 @@ export default function AdminTaskView() {
           const userDoc = userSnapshot.docs[0];
           const userEmail = userDoc ? userDoc.data().email : null;
           
+          console.log('Sending notification for task status:', status, 'to user:', selectedTask.assignedTo, 'email:', userEmail);
+          
           if (userEmail) {
             if (status === TaskStatus.COMPLETED) {
+              console.log('Sending task approved notification');
               await notificationService.notifyTaskApproved(
                 selectedTask.assignedTo,
                 userEmail,
@@ -244,7 +247,8 @@ export default function AdminTaskView() {
                 formatCurrency(selectedTask.amount),
                 selectedTask.id
               );
-            } else {
+            } else if (status === TaskStatus.NEEDS_REVISION) {
+              console.log('Sending task rejected notification for pembetulan');
               await notificationService.notifyTaskRejected(
                 selectedTask.assignedTo,
                 userEmail,
@@ -253,6 +257,8 @@ export default function AdminTaskView() {
                 selectedTask.id
               );
             }
+          } else {
+            console.error('User email not found for notification. User ID:', selectedTask.assignedTo);
           }
         } catch (notificationError) {
           console.error('Error sending notification to user:', notificationError);
