@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Task, TaskStatus, TaskMessage } from '@/types';
-import { doc, updateDoc, Timestamp, collection, query, where, onSnapshot, addDoc, orderBy } from 'firebase/firestore';
+import { doc, updateDoc, Timestamp, collection, query, where, onSnapshot, addDoc, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate, formatMessageWithLinks } from '@/lib/utils';
+import { notificationService } from '@/lib/notifications';
 import { ArrowLeft, Send, MessageCircle, Users } from 'lucide-react';
 
 interface TaskDetailViewProps {
@@ -93,6 +94,26 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
       };
 
       await updateDoc(doc(db, 'tasks', task.id), updates);
+      
+      // Get all admin users for notification
+      try {
+        const adminQuery = query(collection(db, 'users'), where('isAdmin', '==', true));
+        const adminSnapshot = await getDocs(adminQuery);
+        const adminEmails = adminSnapshot.docs.map(doc => ({
+          userId: doc.id,
+          email: doc.data().email
+        }));
+
+        // Notify admins that task needs review
+        await notificationService.notifyTaskNeedsReview(
+          task.name,
+          user.fullname,
+          task.id,
+          adminEmails
+        );
+      } catch (notificationError) {
+        console.error('Error sending notification to admins:', notificationError);
+      }
       
       if (onUpdate) {
         onUpdate({ 

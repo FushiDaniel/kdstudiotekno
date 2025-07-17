@@ -5,7 +5,7 @@ export interface NotificationData {
   userId: string;
   title: string;
   message: string;
-  type: 'task_new' | 'task_approved' | 'task_rejected' | 'payment_completed' | 'task_assigned' | 'system';
+  type: 'task_new' | 'task_approved' | 'task_rejected' | 'payment_completed' | 'task_assigned' | 'task_needs_review' | 'system';
   relatedId?: string;
   isRead: boolean;
   createdAt: Date;
@@ -236,6 +236,12 @@ class NotificationService {
           message: `Tugasan "${data.taskName}" perlu pembetulan. Sebab: ${data.feedback || 'Sila semak komen admin.'}`
         };
       
+      case 'task_needs_review':
+        return {
+          title: 'Tugasan Perlu Disemak',
+          message: `Tugasan "${data.taskName}" telah dihantar oleh ${data.assignedUser} dan menunggu semakan admin.`
+        };
+      
       case 'payment_completed':
         return {
           title: 'Bayaran Selesai! 💰',
@@ -326,6 +332,26 @@ class NotificationService {
       'task_rejected',
       taskId
     );
+  }
+
+  async notifyTaskNeedsReview(
+    taskName: string,
+    assignedUser: string,
+    taskId: string,
+    adminEmails: { userId: string; email: string }[]
+  ): Promise<void> {
+    const template = this.getNotificationTemplate('task_needs_review', { taskName, assignedUser });
+    
+    for (const admin of adminEmails) {
+      await this.sendNotification(
+        admin.userId,
+        admin.email,
+        template.title,
+        template.message,
+        'task_needs_review',
+        taskId
+      );
+    }
   }
 
   async notifyPaymentCompleted(

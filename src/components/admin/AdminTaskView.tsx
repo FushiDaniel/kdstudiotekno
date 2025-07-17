@@ -228,25 +228,34 @@ export default function AdminTaskView() {
 
       // Send notification to the task assignee
       if (selectedTask.assignedTo) {
-        // Get user email - in a real app, you'd fetch this from users collection
-        const userEmail = selectedTask.assignedToName ? `${selectedTask.assignedToName.toLowerCase().replace(' ', '')}@email.com` : 'user@email.com';
-        
-        if (status === TaskStatus.COMPLETED) {
-          await notificationService.notifyTaskApproved(
-            selectedTask.assignedTo,
-            userEmail,
-            selectedTask.name,
-            formatCurrency(selectedTask.amount),
-            selectedTask.id
-          );
-        } else {
-          await notificationService.notifyTaskRejected(
-            selectedTask.assignedTo,
-            userEmail,
-            selectedTask.name,
-            feedbackNote || 'Sila semak komen admin.',
-            selectedTask.id
-          );
+        try {
+          // Get the actual user email from users collection
+          const userQuery = query(collection(db, 'users'), where('uid', '==', selectedTask.assignedTo));
+          const userSnapshot = await getDocs(userQuery);
+          const userDoc = userSnapshot.docs[0];
+          const userEmail = userDoc ? userDoc.data().email : null;
+          
+          if (userEmail) {
+            if (status === TaskStatus.COMPLETED) {
+              await notificationService.notifyTaskApproved(
+                selectedTask.assignedTo,
+                userEmail,
+                selectedTask.name,
+                formatCurrency(selectedTask.amount),
+                selectedTask.id
+              );
+            } else {
+              await notificationService.notifyTaskRejected(
+                selectedTask.assignedTo,
+                userEmail,
+                selectedTask.name,
+                feedbackNote || 'Sila semak komen admin.',
+                selectedTask.id
+              );
+            }
+          }
+        } catch (notificationError) {
+          console.error('Error sending notification to user:', notificationError);
         }
       }
       
