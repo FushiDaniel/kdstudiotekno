@@ -243,8 +243,8 @@ export default function CalendarView() {
 
       // Remove undefined fields to prevent Firebase errors
       Object.keys(dataToSave).forEach(key => {
-        if (dataToSave[key] === undefined) {
-          delete dataToSave[key];
+        if ((dataToSave as any)[key] === undefined) {
+          delete (dataToSave as any)[key];
         }
       });
       
@@ -279,7 +279,7 @@ export default function CalendarView() {
           const allUsers = usersSnapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data()
-          }));
+          })) as Array<{id: string} & any>;
 
           // Filter users based on participant groups and notification settings
           const usersToNotify = allUsers.filter(u => {

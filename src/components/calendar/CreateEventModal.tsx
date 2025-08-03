@@ -129,7 +129,7 @@ export default function CreateEventModal({ onClose, onCreate }: CreateEventModal
       const { default: Swal } = await import('sweetalert2');
       await Swal.fire({
         title: 'Ralat!',
-        text: 'Gagal menyimpan acara: ' + error.message,
+        text: 'Gagal menyimpan acara: ' + (error instanceof Error ? error.message : String(error)),
         icon: 'error',
         confirmButtonText: 'OK',
         confirmButtonColor: '#ef4444',
