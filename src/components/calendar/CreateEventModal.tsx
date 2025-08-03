@@ -67,16 +67,23 @@ export default function CreateEventModal({ onClose, onCreate }: CreateEventModal
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted, starting event creation process...');
+    console.log('Form data:', formData);
+    
     setLoading(true);
 
     try {
+      console.log('Creating date objects...');
       const startDateTime = formData.isAllDay 
-        ? new Date(formData.startDate)
+        ? new Date(`${formData.startDate}T00:00:00`)
         : new Date(`${formData.startDate}T${formData.startTime}`);
       
       const endDateTime = formData.isAllDay
-        ? new Date(formData.endDate || formData.startDate)
+        ? new Date(`${formData.endDate || formData.startDate}T23:59:59`)
         : new Date(`${formData.endDate || formData.startDate}T${formData.endTime || formData.startTime}`);
+
+      console.log('Start date:', startDateTime);
+      console.log('End date:', endDateTime);
 
       // Ensure end time is after start time
       if (endDateTime <= startDateTime) {
@@ -85,14 +92,12 @@ export default function CreateEventModal({ onClose, onCreate }: CreateEventModal
         } else {
           endDateTime.setTime(startDateTime.getTime() + (60 * 60 * 1000)); // Add 1 hour
         }
+        console.log('Adjusted end date:', endDateTime);
       }
 
       const eventData: Partial<CalendarEvent> = {
         title: formData.title,
-        description: formData.description || undefined,
         type: formData.type,
-        location: formData.location || undefined,
-        attendees: formData.attendees.length > 0 ? formData.attendees : undefined,
         color: formData.color,
         isAllDay: formData.isAllDay,
         start: startDateTime,
@@ -101,9 +106,39 @@ export default function CreateEventModal({ onClose, onCreate }: CreateEventModal
         notificationSettings: formData.notificationSettings
       };
 
+      // Only add optional fields if they have values
+      if (formData.description && formData.description.trim()) {
+        eventData.description = formData.description;
+      }
+      if (formData.location && formData.location.trim()) {
+        eventData.location = formData.location;
+      }
+      if (formData.attendees.length > 0) {
+        eventData.attendees = formData.attendees;
+      }
+
+      console.log('Final event data to be sent:', eventData);
+      console.log('Calling onCreate function...');
+      
       await onCreate(eventData);
+      console.log('onCreate function completed successfully');
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error('Error in handleSubmit:', error);
+      
+      // Use dynamic import for SweetAlert2 (client-side only)
+      const { default: Swal } = await import('sweetalert2');
+      await Swal.fire({
+        title: 'Ralat!',
+        text: 'Gagal menyimpan acara: ' + error.message,
+        icon: 'error',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#ef4444',
+        customClass: {
+          popup: 'swal-high-z-index'
+        },
+        backdrop: true,
+        allowOutsideClick: false
+      });
     } finally {
       setLoading(false);
     }
@@ -233,7 +268,7 @@ export default function CreateEventModal({ onClose, onCreate }: CreateEventModal
                         type="time"
                         value={formData.startTime}
                         onChange={(e) => setFormData(prev => ({...prev, startTime: e.target.value}))}
-                        required
+                        required={!formData.isAllDay}
                       />
                     </div>
                   )}
@@ -501,7 +536,10 @@ export default function CreateEventModal({ onClose, onCreate }: CreateEventModal
             <Button type="button" variant="outline" onClick={onClose}>
               Batal
             </Button>
-            <Button type="submit" disabled={loading || !formData.title || !formData.startDate}>
+            <Button 
+              type="submit" 
+              disabled={loading || !formData.title || !formData.startDate || (!formData.isAllDay && !formData.startTime)}
+            >
               {loading ? 'Menyimpan dan menghantar notifikasi...' : 'Simpan Acara'}
             </Button>
           </div>

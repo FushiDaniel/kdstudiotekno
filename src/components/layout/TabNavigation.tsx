@@ -12,7 +12,9 @@ import {
   User, 
   Users,
   Bell,
-  Calendar
+  Calendar,
+  Menu,
+  X
 } from 'lucide-react';
 import Dashboard from '@/components/dashboard/Dashboard';
 import TaskView from '@/components/tasks/TaskView';
@@ -44,6 +46,7 @@ export default function TabNavigation() {
   const { unreadCount } = useNotifications();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [isProfileIncomplete] = useState(false); // This should check profile completeness
 
   // Define all tabs
@@ -99,6 +102,16 @@ export default function TabNavigation() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
+              {/* Mobile Hamburger Menu */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="md:hidden"
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+              >
+                {showMobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+              
               <div className="w-8 h-8 relative">
                 <Image
                   src="/kdlogo.jpeg"
@@ -134,7 +147,7 @@ export default function TabNavigation() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 pt-16 pb-16 md:pb-0 md:pl-64 relative">
+      <div className="flex-1 pt-16 md:pl-64 relative">
         {renderContent()}
         
         {/* Notification Overlay */}
@@ -145,31 +158,72 @@ export default function TabNavigation() {
         )}
       </div>
 
-      {/* Bottom Tab Navigation - Mobile */}
-      <div className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-40">
-        <div className="grid grid-cols-6 w-full">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+      {/* Mobile Slide-out Menu */}
+      {showMobileMenu && (
+        <div className="md:hidden fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50" 
+            onClick={() => setShowMobileMenu(false)}
+          ></div>
+          
+          {/* Menu Panel */}
+          <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 relative">
+                    <Image
+                      src="/kdlogo.jpeg"
+                      alt="KDStudio Logo"
+                      width={32}
+                      height={32}
+                      className="rounded-lg object-cover"
+                      priority
+                    />
+                  </div>
+                  <h2 className="text-lg font-semibold">KDstudio</h2>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
             
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center justify-center py-2 relative ${
-                  isActive ? 'text-black' : 'text-gray-500'
-                }`}
-              >
-                <Icon className="h-5 w-5 mb-1" />
-                <span className="text-[10px] font-medium text-gray-900 truncate w-full text-center px-1">{tab.label}</span>
-                {tab.badge && (
-                  <span className="absolute top-1 right-1/4 w-2 h-2 bg-red-500 rounded-full"></span>
-                )}
-              </button>
-            );
-          })}
+            <div className="p-4 space-y-2">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setShowMobileMenu(false);
+                    }}
+                    className={`w-full px-4 py-3 flex items-center space-x-3 text-left rounded-lg transition-colors relative ${
+                      isActive 
+                        ? 'bg-black text-white' 
+                        : 'text-gray-900 hover:bg-gray-100'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span className="font-medium">{tab.label}</span>
+                    {tab.badge && (
+                      <span className="ml-auto w-2 h-2 bg-red-500 rounded-full"></span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Side Tab Navigation - Desktop */}
       <div className="hidden md:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white border-r border-gray-200 overflow-y-auto">
@@ -204,11 +258,6 @@ export default function TabNavigation() {
         @media (min-width: 768px) {
           .flex-1 {
             margin-left: 16rem;
-          }
-        }
-        @media (max-width: 767px) {
-          .flex-1 {
-            margin-bottom: 60px;
           }
         }
       `}</style>

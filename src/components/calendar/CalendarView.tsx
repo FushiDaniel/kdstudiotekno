@@ -4,19 +4,23 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar, momentLocalizer, View, Event } from 'react-big-calendar';
 import moment from 'moment';
+import 'moment/locale/ms'; // Malay locale
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Task, CalendarEvent, CalendarEventType, TaskStatus } from '@/types';
-import { collection, query, onSnapshot, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatDate } from '@/lib/utils';
 import { Plus, Eye, Calendar as CalendarIcon, Users, Clock } from 'lucide-react';
+import { notificationService } from '@/lib/notifications';
 import EventDetailModal from './EventDetailModal';
 import CreateEventModal from './CreateEventModal';
 import { CalendarEventExtended } from './types';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
+// Set moment to Malay locale and create localizer
+moment.locale('ms');
 const localizer = momentLocalizer(moment);
 
 export default function CalendarView() {
@@ -28,6 +32,61 @@ export default function CalendarView() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEventExtended | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Helper functions
+  const getEventIcon = (type: CalendarEventType) => {
+    switch (type) {
+      case CalendarEventType.MEETING:
+        return '👥';
+      case CalendarEventType.DEADLINE:
+        return '⏰';
+      case CalendarEventType.TASK:
+        return '📋';
+      case CalendarEventType.TRAINING:
+        return '🎓';
+      case CalendarEventType.WORKSHOP:
+        return '🛠️';
+      case CalendarEventType.REVIEW:
+        return '🔍';
+      case CalendarEventType.PRESENTATION:
+        return '📊';
+      case CalendarEventType.CLIENT_MEETING:
+        return '🤝';
+      case CalendarEventType.TEAM_BUILDING:
+        return '🎯';
+      case CalendarEventType.ANNOUNCEMENT:
+        return '📢';
+      default:
+        return '📅';
+    }
+  };
+
+  const getEventColor = (type: CalendarEventType) => {
+    switch (type) {
+      case CalendarEventType.MEETING:
+        return '#8b5cf6';
+      case CalendarEventType.DEADLINE:
+        return '#ef4444';
+      case CalendarEventType.TASK:
+        return '#3b82f6';
+      case CalendarEventType.TRAINING:
+        return '#3b82f6';
+      case CalendarEventType.WORKSHOP:
+        return '#10b981';
+      case CalendarEventType.REVIEW:
+        return '#f59e0b';
+      case CalendarEventType.PRESENTATION:
+        return '#ec4899';
+      case CalendarEventType.CLIENT_MEETING:
+        return '#14b8a6';
+      case CalendarEventType.TEAM_BUILDING:
+        return '#f97316';
+      case CalendarEventType.ANNOUNCEMENT:
+        return '#ef4444';
+      default:
+        return '#6b7280';
+    }
+  };
 
   // Combine tasks and calendar events into calendar format
   const calendarData = useMemo(() => {
@@ -83,78 +142,35 @@ export default function CalendarView() {
       }
     });
 
-    // Add manual calendar events
+    // Add manual calendar events (filtered by participant groups)
     calendarEvents.forEach(event => {
-      events.push({
-        id: event.id,
-        title: `${getEventIcon(event.type)} ${event.title}`,
-        start: event.start,
-        end: event.end,
-        type: event.type,
-        description: event.description,
-        createdBy: event.createdBy,
-        createdByName: event.createdByName,
-        color: event.color || getEventColor(event.type),
-        originalEvent: event
-      });
+      // Check if current user should see this event based on their employment type
+      const userEmploymentType = user?.employmentType;
+      const canSeeEvent = event.participantGroups && (
+        (userEmploymentType === 'FL' && event.participantGroups.freelance) ||
+        (userEmploymentType === 'PT' && event.participantGroups.partTime) ||
+        (userEmploymentType === 'FT' && event.participantGroups.fullTime) ||
+        user?.isAdmin // Admins can see all events
+      );
+
+      if (canSeeEvent) {
+        events.push({
+          id: event.id,
+          title: `${getEventIcon(event.type)} ${event.title}`,
+          start: event.start,
+          end: event.end,
+          type: event.type,
+          description: event.description,
+          createdBy: event.createdBy,
+          createdByName: event.createdByName,
+          color: event.color || getEventColor(event.type),
+          originalEvent: event
+        });
+      }
     });
 
     return events;
   }, [tasks, calendarEvents]);
-
-  const getEventIcon = (type: CalendarEventType) => {
-    switch (type) {
-      case CalendarEventType.MEETING:
-        return '👥';
-      case CalendarEventType.DEADLINE:
-        return '⏰';
-      case CalendarEventType.TASK:
-        return '📋';
-      case CalendarEventType.TRAINING:
-        return '🎓';
-      case CalendarEventType.WORKSHOP:
-        return '🛠️';
-      case CalendarEventType.REVIEW:
-        return '🔍';
-      case CalendarEventType.PRESENTATION:
-        return '📊';
-      case CalendarEventType.CLIENT_MEETING:
-        return '🤝';
-      case CalendarEventType.TEAM_BUILDING:
-        return '🎯';
-      case CalendarEventType.ANNOUNCEMENT:
-        return '📢';
-      default:
-        return '📅';
-    }
-  };
-
-  const getEventColor = (type: CalendarEventType) => {
-    switch (type) {
-      case CalendarEventType.MEETING:
-        return '#8b5cf6';
-      case CalendarEventType.DEADLINE:
-        return '#ef4444';
-      case CalendarEventType.TASK:
-        return '#3b82f6';
-      case CalendarEventType.TRAINING:
-        return '#3b82f6';
-      case CalendarEventType.WORKSHOP:
-        return '#10b981';
-      case CalendarEventType.REVIEW:
-        return '#f59e0b';
-      case CalendarEventType.PRESENTATION:
-        return '#ec4899';
-      case CalendarEventType.CLIENT_MEETING:
-        return '#14b8a6';
-      case CalendarEventType.TEAM_BUILDING:
-        return '#f97316';
-      case CalendarEventType.ANNOUNCEMENT:
-        return '#ef4444';
-      default:
-        return '#6b7280';
-    }
-  };
 
   useEffect(() => {
     if (!user) return;
@@ -204,42 +220,94 @@ export default function CalendarView() {
   };
 
   const handleCreateEvent = async (eventData: Partial<CalendarEvent>) => {
-    if (!user) return;
+    if (!user) {
+      console.error('No user logged in');
+      return;
+    }
+
+    console.log('handleCreateEvent called with data:', eventData);
+    console.log('User:', user);
+    console.log('Firebase db object:', db);
 
     try {
-      // Save event to Firebase
-      const docRef = await addDoc(collection(db, 'calendar'), {
+      console.log('Attempting to save to Firebase calendar collection...');
+      
+      const dataToSave = {
         ...eventData,
         createdBy: user.uid,
         createdByName: user.fullname,
         createdAt: Timestamp.fromDate(new Date()),
         start: Timestamp.fromDate(eventData.start!),
         end: Timestamp.fromDate(eventData.end!),
+      };
+
+      // Remove undefined fields to prevent Firebase errors
+      Object.keys(dataToSave).forEach(key => {
+        if (dataToSave[key] === undefined) {
+          delete dataToSave[key];
+        }
+      });
+      
+      console.log('Data being saved to Firebase (after cleaning):', dataToSave);
+      
+      const docRef = await addDoc(collection(db, 'calendar'), dataToSave);
+
+      console.log('✅ Event saved to Firebase with ID:', docRef.id);
+      
+      // Use dynamic import for SweetAlert2 (client-side only)
+      const { default: Swal } = await import('sweetalert2');
+      await Swal.fire({
+        title: 'Berjaya!',
+        text: 'Acara telah disimpan dengan berjaya',
+        icon: 'success',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#000000',
+        customClass: {
+          popup: 'swal-high-z-index'
+        },
+        backdrop: true,
+        allowOutsideClick: false
       });
 
-      // Send email notifications if enabled
+      // Send notifications if enabled
       if (eventData.notificationSettings) {
-        const notificationData = {
-          eventId: docRef.id,
-          eventTitle: eventData.title,
-          eventDescription: eventData.description,
-          eventStart: eventData.start?.toISOString(),
-          eventEnd: eventData.end?.toISOString(),
-          eventType: eventData.type,
-          location: eventData.location,
-          notificationSettings: eventData.notificationSettings,
-          participantGroups: eventData.participantGroups,
-          createdByName: user.fullname
-        };
-
         try {
-          await fetch('/api/send-calendar-notification', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(notificationData),
+          // Get users based on employment type selection
+          const usersQuery = query(collection(db, 'users'));
+          const usersSnapshot = await getDocs(usersQuery);
+
+          const allUsers = usersSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+
+          // Filter users based on participant groups and notification settings
+          const usersToNotify = allUsers.filter(u => {
+            if (!u.isApproved || u.isAdmin) return false; // Only notify approved non-admin users
+            
+            return (
+              (eventData.participantGroups?.freelance && eventData.notificationSettings?.notifyFreelance && u.employmentType === 'FL') ||
+              (eventData.participantGroups?.partTime && eventData.notificationSettings?.notifyPartTime && u.employmentType === 'PT') ||
+              (eventData.participantGroups?.fullTime && eventData.notificationSettings?.notifyFullTime && u.employmentType === 'FT')
+            );
           });
+
+          // Send notifications using the proper notification service
+          const eventDate = eventData.start ? new Date(eventData.start).toLocaleDateString('ms-MY') : '';
+          const notificationTitle = 'Acara Kalendar Baru';
+          const notificationMessage = `Acara "${eventData.title}" telah dijadualkan pada ${eventDate}. ${eventData.description ? eventData.description : ''}`;
+
+          for (const user of usersToNotify) {
+            await notificationService.sendInAppNotification({
+              userId: user.id,
+              title: notificationTitle,
+              message: notificationMessage,
+              type: 'system',
+              relatedId: docRef.id
+            });
+          }
+
+          console.log(`Calendar notifications sent to ${usersToNotify.length} users`);
         } catch (notificationError) {
           console.error('Error sending notifications:', notificationError);
           // Don't fail the event creation if notification fails
@@ -249,6 +317,9 @@ export default function CalendarView() {
       setShowCreateModal(false);
     } catch (error) {
       console.error('Error creating event:', error);
+      console.error('Event data that failed:', eventData);
+      console.error('User data:', user);
+      // Don't close modal on error so user can try again
     }
   };
 
@@ -372,7 +443,8 @@ export default function CalendarView() {
                 date: "Tarikh",
                 time: "Masa",
                 event: "Acara",
-                noEventsInRange: "Tiada acara dalam tempoh ini"
+                noEventsInRange: "Tiada acara dalam tempoh ini",
+                showMore: total => `+${total} lagi`
               }}
             />
           </div>
