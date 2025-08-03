@@ -178,7 +178,7 @@ export default function CalendarView() {
     });
 
     // Listen for calendar events
-    const eventsQuery = query(collection(db, 'calendarEvents'));
+    const eventsQuery = query(collection(db, 'calendar'));
     const eventsUnsubscribe = onSnapshot(eventsQuery, (snapshot) => {
       const eventsData = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -207,7 +207,8 @@ export default function CalendarView() {
     if (!user) return;
 
     try {
-      await addDoc(collection(db, 'calendarEvents'), {
+      // Save event to Firebase
+      const docRef = await addDoc(collection(db, 'calendar'), {
         ...eventData,
         createdBy: user.uid,
         createdByName: user.fullname,
@@ -215,6 +216,36 @@ export default function CalendarView() {
         start: Timestamp.fromDate(eventData.start!),
         end: Timestamp.fromDate(eventData.end!),
       });
+
+      // Send email notifications if enabled
+      if (eventData.notificationSettings) {
+        const notificationData = {
+          eventId: docRef.id,
+          eventTitle: eventData.title,
+          eventDescription: eventData.description,
+          eventStart: eventData.start?.toISOString(),
+          eventEnd: eventData.end?.toISOString(),
+          eventType: eventData.type,
+          location: eventData.location,
+          notificationSettings: eventData.notificationSettings,
+          participantGroups: eventData.participantGroups,
+          createdByName: user.fullname
+        };
+
+        try {
+          await fetch('/api/send-calendar-notification', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(notificationData),
+          });
+        } catch (notificationError) {
+          console.error('Error sending notifications:', notificationError);
+          // Don't fail the event creation if notification fails
+        }
+      }
+
       setShowCreateModal(false);
     } catch (error) {
       console.error('Error creating event:', error);

@@ -502,7 +502,7 @@ export default function CreateEventModal({ onClose, onCreate }: CreateEventModal
               Batal
             </Button>
             <Button type="submit" disabled={loading || !formData.title || !formData.startDate}>
-              {loading ? 'Menyimpan...' : 'Simpan Acara'}
+              {loading ? 'Menyimpan dan menghantar notifikasi...' : 'Simpan Acara'}
             </Button>
           </div>
         </form>
