@@ -27,7 +27,19 @@ import PendingApprovalView from '@/components/auth/PendingApprovalView';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 
-const CalendarView = dynamic(() => import('@/components/calendar/CalendarView'), {
+const CalendarView = dynamic(() => import('@/components/calendar/CalendarView').catch(() => {
+  // Return fallback component if calendar fails to load
+  return {
+    default: () => (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Kalendar</h1>
+          <p className="text-gray-600">Kalendar tidak dapat dimuatkan. Sila muat semula halaman.</p>
+        </div>
+      </div>
+    )
+  };
+}), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center h-96"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div></div>
 });
