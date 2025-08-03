@@ -11,7 +11,8 @@ import {
   CreditCard, 
   User, 
   Users,
-  Bell
+  Bell,
+  Calendar
 } from 'lucide-react';
 import Dashboard from '@/components/dashboard/Dashboard';
 import TaskView from '@/components/tasks/TaskView';
@@ -24,6 +25,12 @@ import NotificationView from '@/components/notifications/NotificationView';
 import DirectoryView from '@/components/directory/DirectoryView';
 import PendingApprovalView from '@/components/auth/PendingApprovalView';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
+
+const CalendarView = dynamic(() => import('@/components/calendar/CalendarView'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-96"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div></div>
+});
 
 interface Tab {
   id: string;
@@ -43,6 +50,7 @@ export default function TabNavigation() {
   const allTabs = [
     { id: 'dashboard', label: 'Dashboard', icon: Inbox },
     { id: 'tasks', label: 'Tugasan', icon: ListChecks },
+    { id: 'calendar', label: 'Kalendar', icon: Calendar },
     { id: 'clockin', label: 'Clock In', icon: Clock },
     { id: 'payment', label: 'Bayaran', icon: CreditCard },
     { id: 'directory', label: 'Direktori', icon: Users },
@@ -64,6 +72,8 @@ export default function TabNavigation() {
         return <Dashboard />;
       case 'tasks':
         return user?.isAdmin ? <AdminTaskView /> : <TaskView />;
+      case 'calendar':
+        return <CalendarView />;
       case 'clockin':
         return <ClockInView />;
       case 'payment':

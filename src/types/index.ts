@@ -151,3 +151,27 @@ export enum WorkSessionError {
   WEEKLY_LIMIT_EXCEEDED = "Had masa mingguan telah dicapai",
   UNKNOWN = "Ralat tidak diketahui"
 }
+
+export enum CalendarEventType {
+  TASK = 'task',
+  MEETING = 'meeting',
+  DEADLINE = 'deadline',
+  OTHER = 'other'
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  start: Date;
+  end: Date;
+  type: CalendarEventType;
+  createdBy: string;
+  createdByName: string;
+  createdAt: Date;
+  relatedTaskId?: string;
+  attendees?: string[];
+  location?: string;
+  isAllDay?: boolean;
+  color?: string;
+}
