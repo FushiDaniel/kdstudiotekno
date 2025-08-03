@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Calendar, momentLocalizer, View, Event } from 'react-big-calendar';
-import moment from 'moment';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,19 +13,36 @@ import { Plus, Eye, Calendar as CalendarIcon, Users, Clock } from 'lucide-react'
 import EventDetailModal from './EventDetailModal';
 import CreateEventModal from './CreateEventModal';
 import { CalendarEventExtended } from './types';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-const localizer = momentLocalizer(moment);
+// Import Calendar components conditionally
+let Calendar: any = null;
+let localizer: any = null;
+
+if (typeof window !== 'undefined') {
+  const { Calendar: RBCCalendar, momentLocalizer } = require('react-big-calendar');
+  const moment = require('moment');
+  
+  Calendar = RBCCalendar;
+  localizer = momentLocalizer(moment);
+  
+  // Import CSS
+  require('react-big-calendar/lib/css/react-big-calendar.css');
+}
 
 export default function CalendarView() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
-  const [currentView, setCurrentView] = useState<View>('month');
+  const [currentView, setCurrentView] = useState<any>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEventExtended | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Combine tasks and calendar events into calendar format
   const calendarData = useMemo(() => {
@@ -265,10 +280,21 @@ export default function CalendarView() {
     };
   };
 
-  if (loading) {
+  if (loading || !isClient) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+      </div>
+    );
+  }
+
+  if (!Calendar || !localizer) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Kalendar</h1>
+          <p className="text-gray-600">Kalendar tidak dapat dimuatkan. Sila muat semula halaman.</p>
+        </div>
       </div>
     );
   }
