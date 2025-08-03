@@ -26,6 +26,20 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
         return 'Mesyuarat';
       case CalendarEventType.DEADLINE:
         return 'Tarikh Akhir';
+      case CalendarEventType.TRAINING:
+        return 'Latihan';
+      case CalendarEventType.WORKSHOP:
+        return 'Bengkel';
+      case CalendarEventType.REVIEW:
+        return 'Semakan';
+      case CalendarEventType.PRESENTATION:
+        return 'Pembentangan';
+      case CalendarEventType.CLIENT_MEETING:
+        return 'Mesyuarat Pelanggan';
+      case CalendarEventType.TEAM_BUILDING:
+        return 'Team Building';
+      case CalendarEventType.ANNOUNCEMENT:
+        return 'Pengumuman';
       default:
         return 'Lain-lain';
     }
@@ -212,17 +226,63 @@ export default function EventDetailModal({ event, onClose }: EventDetailModalPro
                 </Card>
               )}
 
-              {/* Attendees */}
+              {/* Participant Groups */}
+              {(event.originalEvent as CalendarEvent).participantGroups && (
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-start space-x-2">
+                      <Users className="h-4 w-4 text-gray-500 mt-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 mb-2">Kumpulan Peserta</p>
+                        <div className="space-y-2">
+                          {(event.originalEvent as CalendarEvent).participantGroups!.freelance && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">• Freelance (FL)</span>
+                              {(event.originalEvent as CalendarEvent).notificationSettings?.notifyFreelance && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  Notifikasi dihantar
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {(event.originalEvent as CalendarEvent).participantGroups!.partTime && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">• Part Time (PT)</span>
+                              {(event.originalEvent as CalendarEvent).notificationSettings?.notifyPartTime && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  Notifikasi dihantar
+                                </span>
+                              )}
+                            </div>
+                          )}
+                          {(event.originalEvent as CalendarEvent).participantGroups!.fullTime && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">• Full Time (FT)</span>
+                              {(event.originalEvent as CalendarEvent).notificationSettings?.notifyFullTime && (
+                                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                                  Notifikasi dihantar
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Additional Attendees */}
               {(event.originalEvent as CalendarEvent).attendees && (event.originalEvent as CalendarEvent).attendees!.length > 0 && (
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-2">
                       <Users className="h-4 w-4 text-gray-500 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Peserta</p>
+                        <p className="text-sm font-medium text-gray-900">Peserta Tambahan</p>
                         <div className="text-sm text-gray-600">
                           {(event.originalEvent as CalendarEvent).attendees!.map((attendee: string, index: number) => (
-                            <div key={index}>{attendee}</div>
+                            <div key={index}>• {attendee}</div>
                           ))}
                         </div>
                       </div>

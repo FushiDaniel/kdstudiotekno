@@ -110,6 +110,20 @@ export default function CalendarView() {
         return '⏰';
       case CalendarEventType.TASK:
         return '📋';
+      case CalendarEventType.TRAINING:
+        return '🎓';
+      case CalendarEventType.WORKSHOP:
+        return '🛠️';
+      case CalendarEventType.REVIEW:
+        return '🔍';
+      case CalendarEventType.PRESENTATION:
+        return '📊';
+      case CalendarEventType.CLIENT_MEETING:
+        return '🤝';
+      case CalendarEventType.TEAM_BUILDING:
+        return '🎯';
+      case CalendarEventType.ANNOUNCEMENT:
+        return '📢';
       default:
         return '📅';
     }
@@ -123,6 +137,20 @@ export default function CalendarView() {
         return '#ef4444';
       case CalendarEventType.TASK:
         return '#3b82f6';
+      case CalendarEventType.TRAINING:
+        return '#3b82f6';
+      case CalendarEventType.WORKSHOP:
+        return '#10b981';
+      case CalendarEventType.REVIEW:
+        return '#f59e0b';
+      case CalendarEventType.PRESENTATION:
+        return '#ec4899';
+      case CalendarEventType.CLIENT_MEETING:
+        return '#14b8a6';
+      case CalendarEventType.TEAM_BUILDING:
+        return '#f97316';
+      case CalendarEventType.ANNOUNCEMENT:
+        return '#ef4444';
       default:
         return '#6b7280';
     }

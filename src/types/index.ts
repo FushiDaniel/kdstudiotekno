@@ -156,6 +156,13 @@ export enum CalendarEventType {
   TASK = 'task',
   MEETING = 'meeting',
   DEADLINE = 'deadline',
+  TRAINING = 'training',
+  WORKSHOP = 'workshop',
+  REVIEW = 'review',
+  PRESENTATION = 'presentation',
+  CLIENT_MEETING = 'client_meeting',
+  TEAM_BUILDING = 'team_building',
+  ANNOUNCEMENT = 'announcement',
   OTHER = 'other'
 }
 
@@ -174,4 +181,14 @@ export interface CalendarEvent {
   location?: string;
   isAllDay?: boolean;
   color?: string;
+  participantGroups?: {
+    freelance: boolean;
+    partTime: boolean;
+    fullTime: boolean;
+  };
+  notificationSettings?: {
+    notifyFreelance: boolean;
+    notifyPartTime: boolean;
+    notifyFullTime: boolean;
+  };
 }

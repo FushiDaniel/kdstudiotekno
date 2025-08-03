@@ -26,7 +26,17 @@ export default function CreateEventModal({ onClose, onCreate }: CreateEventModal
     startDate: '',
     startTime: '',
     endDate: '',
-    endTime: ''
+    endTime: '',
+    participantGroups: {
+      freelance: false,
+      partTime: false,
+      fullTime: false
+    },
+    notificationSettings: {
+      notifyFreelance: false,
+      notifyPartTime: false,
+      notifyFullTime: false
+    }
   });
 
   const [attendeeInput, setAttendeeInput] = useState('');
@@ -34,6 +44,13 @@ export default function CreateEventModal({ onClose, onCreate }: CreateEventModal
 
   const eventTypes = [
     { value: CalendarEventType.MEETING, label: 'Mesyuarat', color: '#8b5cf6' },
+    { value: CalendarEventType.TRAINING, label: 'Latihan', color: '#3b82f6' },
+    { value: CalendarEventType.WORKSHOP, label: 'Bengkel', color: '#10b981' },
+    { value: CalendarEventType.REVIEW, label: 'Semakan', color: '#f59e0b' },
+    { value: CalendarEventType.PRESENTATION, label: 'Pembentangan', color: '#ec4899' },
+    { value: CalendarEventType.CLIENT_MEETING, label: 'Mesyuarat Pelanggan', color: '#14b8a6' },
+    { value: CalendarEventType.TEAM_BUILDING, label: 'Team Building', color: '#f97316' },
+    { value: CalendarEventType.ANNOUNCEMENT, label: 'Pengumuman', color: '#ef4444' },
     { value: CalendarEventType.OTHER, label: 'Lain-lain', color: '#6b7280' }
   ];
 
@@ -79,7 +96,9 @@ export default function CreateEventModal({ onClose, onCreate }: CreateEventModal
         color: formData.color,
         isAllDay: formData.isAllDay,
         start: startDateTime,
-        end: endDateTime
+        end: endDateTime,
+        participantGroups: formData.participantGroups,
+        notificationSettings: formData.notificationSettings
       };
 
       await onCreate(eventData);
@@ -266,39 +285,174 @@ export default function CreateEventModal({ onClose, onCreate }: CreateEventModal
             </CardContent>
           </Card>
 
-          {/* Attendees */}
+          {/* Participant Groups */}
           <Card>
             <CardContent className="p-4">
-              <label className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+              <label className="text-sm font-medium text-gray-900 mb-3 flex items-center">
                 <Users className="h-4 w-4 mr-1" />
-                Peserta
+                Kumpulan Peserta
               </label>
-              <div className="flex space-x-2 mb-2">
-                <Input
-                  type="text"
-                  value={attendeeInput}
-                  onChange={(e) => setAttendeeInput(e.target.value)}
-                  placeholder="Nama peserta"
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAttendee())}
-                />
-                <Button type="button" onClick={addAttendee} variant="outline">
-                  Tambah
-                </Button>
-              </div>
-              {formData.attendees.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {formData.attendees.map((attendee, index) => (
-                    <Badge
-                      key={index}
-                      variant="secondary"
-                      className="cursor-pointer"
-                      onClick={() => removeAttendee(index)}
-                    >
-                      {attendee} ×
-                    </Badge>
-                  ))}
+              
+              <div className="space-y-4">
+                {/* Freelance Group */}
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="freelance"
+                      checked={formData.participantGroups.freelance}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        participantGroups: {
+                          ...prev.participantGroups,
+                          freelance: e.target.checked
+                        }
+                      }))}
+                      className="rounded border-gray-300"
+                    />
+                    <label htmlFor="freelance" className="text-sm font-medium text-gray-700">
+                      Freelance (FL)
+                    </label>
+                  </div>
+                  {formData.participantGroups.freelance && (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="notifyFreelance"
+                        checked={formData.notificationSettings.notifyFreelance}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          notificationSettings: {
+                            ...prev.notificationSettings,
+                            notifyFreelance: e.target.checked
+                          }
+                        }))}
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor="notifyFreelance" className="text-xs text-gray-600">
+                        Hantar notifikasi
+                      </label>
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {/* Part Time Group */}
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="partTime"
+                      checked={formData.participantGroups.partTime}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        participantGroups: {
+                          ...prev.participantGroups,
+                          partTime: e.target.checked
+                        }
+                      }))}
+                      className="rounded border-gray-300"
+                    />
+                    <label htmlFor="partTime" className="text-sm font-medium text-gray-700">
+                      Part Time (PT)
+                    </label>
+                  </div>
+                  {formData.participantGroups.partTime && (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="notifyPartTime"
+                        checked={formData.notificationSettings.notifyPartTime}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          notificationSettings: {
+                            ...prev.notificationSettings,
+                            notifyPartTime: e.target.checked
+                          }
+                        }))}
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor="notifyPartTime" className="text-xs text-gray-600">
+                        Hantar notifikasi
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {/* Full Time Group */}
+                <div className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="fullTime"
+                      checked={formData.participantGroups.fullTime}
+                      onChange={(e) => setFormData(prev => ({
+                        ...prev,
+                        participantGroups: {
+                          ...prev.participantGroups,
+                          fullTime: e.target.checked
+                        }
+                      }))}
+                      className="rounded border-gray-300"
+                    />
+                    <label htmlFor="fullTime" className="text-sm font-medium text-gray-700">
+                      Full Time (FT)
+                    </label>
+                  </div>
+                  {formData.participantGroups.fullTime && (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="notifyFullTime"
+                        checked={formData.notificationSettings.notifyFullTime}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          notificationSettings: {
+                            ...prev.notificationSettings,
+                            notifyFullTime: e.target.checked
+                          }
+                        }))}
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor="notifyFullTime" className="text-xs text-gray-600">
+                        Hantar notifikasi
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Manual Attendees (Optional) */}
+              <div className="mt-4 pt-4 border-t">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Peserta Tambahan (Opsional)
+                </label>
+                <div className="flex space-x-2 mb-2">
+                  <Input
+                    type="text"
+                    value={attendeeInput}
+                    onChange={(e) => setAttendeeInput(e.target.value)}
+                    placeholder="Nama peserta tambahan"
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAttendee())}
+                  />
+                  <Button type="button" onClick={addAttendee} variant="outline">
+                    Tambah
+                  </Button>
+                </div>
+                {formData.attendees.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {formData.attendees.map((attendee, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="cursor-pointer"
+                        onClick={() => removeAttendee(index)}
+                      >
+                        {attendee} ×
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
