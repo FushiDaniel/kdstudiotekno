@@ -299,19 +299,21 @@ export default function CalendarView() {
             return shouldNotify;
           });
 
-          // Send notifications using the proper notification service
+          // Send notifications using the proper notification service with email fallback
           const eventDate = eventData.start ? new Date(eventData.start).toLocaleDateString('ms-MY') : '';
           const notificationTitle = 'Acara Kalendar Baru';
           const notificationMessage = `Acara "${eventData.title}" telah dijadualkan pada ${eventDate}. ${eventData.description ? eventData.description : ''}`;
 
           for (const user of usersToNotify) {
-            await notificationService.sendInAppNotification({
-              userId: user.id,
-              title: notificationTitle,
-              message: notificationMessage,
-              type: 'system',
-              relatedId: docRef.id
-            });
+            // Use the full notification method with email fallback
+            await notificationService.sendNotification(
+              user.id,
+              user.email,
+              notificationTitle,
+              notificationMessage,
+              'system',
+              docRef.id
+            );
           }
 
           console.log(`Calendar notifications sent to ${usersToNotify.length} users`);

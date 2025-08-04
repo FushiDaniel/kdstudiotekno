@@ -74,7 +74,7 @@ export default function TabNavigation() {
       case 'dashboard':
         return <Dashboard />;
       case 'tasks':
-        return user?.isAdmin ? <AdminTaskView /> : <TaskView />;
+        return (user?.isAdmin || user?.staffId?.startsWith('PT')) ? <AdminTaskView /> : <TaskView />;
       case 'calendar':
         return <CalendarView />;
       case 'clockin':
