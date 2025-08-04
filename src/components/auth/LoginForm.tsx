@@ -13,6 +13,7 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
   
   const { signIn, signInWithGoogle } = useAuth();
 
@@ -36,6 +37,11 @@ export default function LoginForm() {
   };
 
   const handleGoogleLogin = async () => {
+    if (!acceptTerms) {
+      setError('Sila terima Terma dan Syarat untuk meneruskan');
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
@@ -160,6 +166,30 @@ export default function LoginForm() {
                 <div className="flex-1 border-t border-gray-300"></div>
                 <span className="px-3 text-sm text-gray-500">atau</span>
                 <div className="flex-1 border-t border-gray-300"></div>
+              </div>
+
+              {/* Terms and Conditions Checkbox */}
+              <div className="flex items-start space-x-2">
+                <input
+                  type="checkbox"
+                  id="acceptTerms"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                  className="mt-1 h-4 w-4 text-black border-gray-300 rounded focus:ring-black focus:ring-2"
+                  disabled={isLoading}
+                />
+                <label htmlFor="acceptTerms" className="text-sm text-gray-600 leading-relaxed">
+                  Saya bersetuju dengan{' '}
+                  <a
+                    href="https://www.kerisdigital.com/p/kdstudio-terma-syarat.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-black hover:underline font-medium"
+                  >
+                    Terma dan Syarat
+                  </a>
+                  {' '}KDStudio
+                </label>
               </div>
 
               {/* Google Login */}
