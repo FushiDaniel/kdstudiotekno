@@ -188,7 +188,7 @@ export default function LoginForm() {
                   >
                     Terma dan Syarat
                   </a>
-                  {' '}KDStudio
+                  {' '}KDstudio
                 </label>
               </div>
 
