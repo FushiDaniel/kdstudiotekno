@@ -127,6 +127,38 @@ export default function AdminTimeTrackingView() {
     return formatDuration(totalMinutes);
   };
 
+  const getMonthlyStatsForUser = (userId: string) => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    const monthlyRecords = clockInRecords.filter(record => {
+      if (!record.date || record.userId !== userId) return false;
+      const recordDate = new Date(record.date);
+      return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
+    });
+
+    const totalMinutes = monthlyRecords
+      .filter(record => record.totalMinutes)
+      .reduce((total, record) => total + (record.totalMinutes || 0), 0);
+
+    const totalSessions = monthlyRecords.length;
+    const daysWorked = new Set(monthlyRecords.map(record => record.date)).size;
+
+    return {
+      totalMinutes,
+      totalSessions,
+      daysWorked
+    };
+  };
+
+  const getAllStaffMonthlySummary = () => {
+    return users.map(user => ({
+      ...user,
+      monthlyStats: getMonthlyStatsForUser(user.uid)
+    }));
+  };
+
   const openMapModal = useCallback((record: ClockInRecord) => {
     setSelectedRecord(record);
     setShowMap(true);
@@ -300,6 +332,60 @@ export default function AdminTimeTrackingView() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Monthly Summary for Each Staff */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Ringkasan Bulanan Pekerja - {new Date().toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' })}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-3 font-medium">Pekerja</th>
+                  <th className="text-left p-3 font-medium">Jumlah Jam</th>
+                  <th className="text-left p-3 font-medium">Hari Bekerja</th>
+                  <th className="text-left p-3 font-medium">Total Sesi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {getAllStaffMonthlySummary().map((staff) => (
+                  <tr key={staff.uid} className="border-b hover:bg-gray-50">
+                    <td className="p-3">
+                      <div>
+                        <div className="font-medium">{staff.fullname}</div>
+                        <div className="text-sm text-gray-500">{staff.staffId}</div>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <div className="text-lg font-semibold text-blue-600">
+                        {formatDuration(staff.monthlyStats.totalMinutes)}
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <div className="text-lg font-semibold text-green-600">
+                        {staff.monthlyStats.daysWorked}
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <div className="text-lg font-semibold text-purple-600">
+                        {staff.monthlyStats.totalSessions}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {users.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                Tiada pekerja ditemui
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Records Table */}
       <Card>

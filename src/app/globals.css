@@ -59,6 +59,28 @@
   z-index: 99998 !important;
 }
 
+/* Fix SweetAlert2 checkbox and input click-through issues */
+.swal2-container {
+  z-index: 99999 !important;
+  pointer-events: none;
+}
+
+.swal2-popup {
+  pointer-events: auto !important;
+  z-index: 100000 !important;
+}
+
+.swal2-checkbox, .swal2-radio, .swal2-input, .swal2-select, .swal2-textarea {
+  pointer-events: auto !important;
+  z-index: 100001 !important;
+}
+
+/* Ensure all interactive elements in SweetAlert work */
+.swal2-confirm, .swal2-cancel, .swal2-deny {
+  pointer-events: auto !important;
+  z-index: 100001 !important;
+}
+
 body {
   color: hsl(var(--foreground));
   background: hsl(var(--background));

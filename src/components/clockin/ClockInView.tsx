@@ -216,44 +216,6 @@ export default function ClockInView() {
       .reduce((total, record) => total + (record.totalMinutes || 0), 0);
   };
 
-  const getMonthlyTotalMinutes = () => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    return clockInRecords
-      .filter(record => {
-        if (!record.date || !record.totalMinutes) return false;
-        const recordDate = new Date(record.date);
-        return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
-      })
-      .reduce((total, record) => total + (record.totalMinutes || 0), 0);
-  };
-
-  const getMonthlyStats = () => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    const monthlyRecords = clockInRecords.filter(record => {
-      if (!record.date) return false;
-      const recordDate = new Date(record.date);
-      return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
-    });
-
-    const totalMinutes = monthlyRecords
-      .filter(record => record.totalMinutes)
-      .reduce((total, record) => total + (record.totalMinutes || 0), 0);
-
-    const totalSessions = monthlyRecords.length;
-    const daysWorked = new Set(monthlyRecords.map(record => record.date)).size;
-
-    return {
-      totalMinutes,
-      totalSessions,
-      daysWorked
-    };
-  };
 
   const getCurrentSessionDuration = () => {
     if (!activeSession?.clockInTime) return 0;
@@ -314,35 +276,6 @@ export default function ClockInView() {
         </CardContent>
       </Card>
 
-      {/* Monthly Summary */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <h2 className="text-lg font-semibold mb-3">Ringkasan Bulan Ini</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {formatDuration(getMonthlyStats().totalMinutes)}
-              </div>
-              <div className="text-sm text-gray-600">Jumlah Jam</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {getMonthlyStats().daysWorked}
-              </div>
-              <div className="text-sm text-gray-600">Hari Bekerja</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
-                {getMonthlyStats().totalSessions}
-              </div>
-              <div className="text-sm text-gray-600">Total Sesi</div>
-            </div>
-          </div>
-          <div className="mt-3 text-xs text-gray-500 text-center">
-            {new Date().toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' })}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Current Time & Controls */}
       <Card className="mb-6">

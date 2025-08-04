@@ -282,14 +282,21 @@ export default function CalendarView() {
           })) as Array<{id: string} & any>;
 
           // Filter users based on participant groups and notification settings
+          console.log('All users:', allUsers.length);
+          console.log('Event participant groups:', eventData.participantGroups);
+          console.log('Event notification settings:', eventData.notificationSettings);
+          
           const usersToNotify = allUsers.filter(u => {
             if (!u.isApproved || u.isAdmin) return false; // Only notify approved non-admin users
             
-            return (
+            const shouldNotify = (
               (eventData.participantGroups?.freelance && eventData.notificationSettings?.notifyFreelance && u.employmentType === 'FL') ||
               (eventData.participantGroups?.partTime && eventData.notificationSettings?.notifyPartTime && u.employmentType === 'PT') ||
               (eventData.participantGroups?.fullTime && eventData.notificationSettings?.notifyFullTime && u.employmentType === 'FT')
             );
+            
+            console.log(`User ${u.fullname} (${u.employmentType}): should notify = ${shouldNotify}`);
+            return shouldNotify;
           });
 
           // Send notifications using the proper notification service
