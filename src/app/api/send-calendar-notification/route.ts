@@ -3,6 +3,11 @@ import nodemailer from 'nodemailer';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { EmploymentType } from '@/types';
+import { EmailOptimizer } from '@/lib/email-optimizer';
+
+// Rate limiting cache to prevent spam
+const emailCache = new Map<string, number>();
+const RATE_LIMIT_MINUTES = 5; // Prevent same event notifications within 5 minutes
 
 // Create transporter for sending emails
 const transporter = nodemailer.createTransport({
@@ -65,6 +70,20 @@ export async function POST(request: NextRequest) {
       participantGroups
     });
 
+    // Rate limiting check - prevent duplicate notifications
+    const cacheKey = `${eventId || eventTitle}_${eventStart}_${eventEnd}`;
+    const now = Date.now();
+    const lastSent = emailCache.get(cacheKey);
+    
+    if (lastSent && (now - lastSent) < (RATE_LIMIT_MINUTES * 60 * 1000)) {
+      console.log(`Rate limited: Calendar notification for "${eventTitle}" was already sent recently`);
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Notification already sent recently (rate limited)',
+        emailsSent: 0
+      });
+    }
+
     // Get users to notify based on participant groups and notification settings
     const usersToNotify: string[] = [];
     
@@ -113,10 +132,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Remove duplicates
-    const uniqueEmails = [...new Set(usersToNotify)];
+    // Remove duplicates and optimize list to control costs
+    const uniqueEmails = EmailOptimizer.optimizeEmailList(usersToNotify, 15);
 
     console.log(`Found ${uniqueEmails.length} users to notify:`, uniqueEmails);
+
+    // Check if we can send emails (quota control)
+    if (!EmailOptimizer.canSendEmail()) {
+      console.log('Daily email quota exceeded, skipping calendar notifications');
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Daily email quota exceeded. Notifications paused to control costs.',
+        emailsSent: 0,
+        quotaExceeded: true
+      });
+    }
 
     if (uniqueEmails.length === 0) {
       return NextResponse.json({ 
@@ -179,25 +209,41 @@ export async function POST(request: NextRequest) {
 </html>
     `;
 
-    // Send emails
+    // Send emails in smaller batches to reduce costs and avoid rate limits
     let emailsSent = 0;
-    const emailPromises = uniqueEmails.map(async (email) => {
-      try {
-        await transporter.sendMail({
-          from: `KDStudio <${process.env.EMAIL_USER}>`,
-          to: email,
-          subject: emailSubject,
-          html: emailBody,
-        });
-        emailsSent++;
-        console.log(`Calendar notification sent to: ${email}`);
-      } catch (error) {
-        console.error(`Failed to send email to ${email}:`, error);
+    const BATCH_SIZE = 5; // Send max 5 emails at once to reduce costs
+    const BATCH_DELAY = EmailOptimizer.getBatchDelay(); // Use optimized delay
+    
+    for (let i = 0; i < uniqueEmails.length; i += BATCH_SIZE) {
+      const batch = uniqueEmails.slice(i, i + BATCH_SIZE);
+      
+      const batchPromises = batch.map(async (email) => {
+        try {
+          await transporter.sendMail({
+            from: `KDStudio <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: emailSubject,
+            html: emailBody,
+          });
+          emailsSent++;
+          EmailOptimizer.incrementEmailCount(); // Track for quota
+          console.log(`Calendar notification sent to: ${email}`);
+        } catch (error) {
+          console.error(`Failed to send email to ${email}:`, error);
+        }
+      });
+
+      await Promise.all(batchPromises);
+      
+      // Add delay between batches to avoid rate limiting
+      if (i + BATCH_SIZE < uniqueEmails.length) {
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
       }
-    });
+    }
 
-    await Promise.all(emailPromises);
-
+    // Update cache after successful send
+    emailCache.set(cacheKey, now);
+    
     console.log(`Successfully sent ${emailsSent}/${uniqueEmails.length} calendar notifications`);
 
     return NextResponse.json({

@@ -50,8 +50,8 @@ export class FCMService {
       // Get FCM registration token
       const token = await this.getRegistrationToken();
       if (token) {
-        console.log('FCM: Registration token obtained:', token);
-        // Store token for sending push notifications
+        console.log('FCM: Registration token obtained:', token.substring(0, 20) + '...');
+        // Store token for sending push notifications (userId will be passed separately)
         await this.saveTokenToServer(token);
         return true;
       }
@@ -81,7 +81,7 @@ export class FCMService {
     }
   }
 
-  async saveTokenToServer(token: string): Promise<void> {
+  async saveTokenToServer(token: string, userId?: string): Promise<void> {
     try {
       // Save the token to your backend/Firestore for sending push notifications
       const response = await fetch('/api/save-fcm-token', {
@@ -89,13 +89,15 @@ export class FCMService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token })
+        body: JSON.stringify({ token, userId })
       });
 
       if (response.ok) {
-        console.log('FCM: Token saved to server successfully');
+        console.log('FCM: Token saved to server successfully for user:', userId || 'anonymous');
       } else {
         console.error('FCM: Failed to save token to server');
+        const result = await response.json();
+        console.error('FCM: Server response:', result);
       }
     } catch (error) {
       console.error('FCM: Error saving token to server:', error);
@@ -153,6 +155,19 @@ export class FCMService {
         icon: '/kdlogo.jpeg',
         badge: '/kdlogo.jpeg'
       });
+    }
+  }
+
+  // Call this method when user logs in to associate the token with userId
+  async updateTokenWithUserId(userId: string): Promise<void> {
+    try {
+      const token = await this.getRegistrationToken();
+      if (token) {
+        console.log('FCM: Updating token with userId:', userId);
+        await this.saveTokenToServer(token, userId);
+      }
+    } catch (error) {
+      console.error('FCM: Error updating token with userId:', error);
     }
   }
 }

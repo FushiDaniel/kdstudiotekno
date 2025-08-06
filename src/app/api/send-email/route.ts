@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { EmailOptimizer } from '@/lib/email-optimizer';
 
 export async function POST(request: NextRequest) {
   try {
-    const { to, subject, message } = await request.json();
+    const { to, subject, message, type = 'general' } = await request.json();
 
     // Validate input
     if (!to || !subject || !message) {
@@ -11,6 +12,16 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: to, subject, message' },
         { status: 400 }
       );
+    }
+
+    // Check email quota to prevent excessive costs
+    if (!EmailOptimizer.canSendEmail()) {
+      console.log(`Email quota exceeded for today. Remaining: ${EmailOptimizer.getRemainingQuota()}`);
+      return NextResponse.json({
+        success: false,
+        message: 'Daily email quota exceeded. Email sending paused to control costs.',
+        quotaExceeded: true
+      });
     }
 
     // Check if email credentials are configured
@@ -96,11 +107,15 @@ export async function POST(request: NextRequest) {
 
     const info = await transporter.sendMail(mailOptions);
 
+    // Increment email count for cost tracking
+    EmailOptimizer.incrementEmailCount();
+
     console.log('✅ Email sent successfully:', {
       to: to,
       subject: subject,
       messageId: info.messageId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      remainingQuota: EmailOptimizer.getRemainingQuota()
     });
 
     return NextResponse.json({

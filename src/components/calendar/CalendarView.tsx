@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task, CalendarEvent, CalendarEventType, TaskStatus } from '@/types';
 import { collection, query, onSnapshot, addDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { firebaseCache } from '@/lib/firebase-cache';
 import { formatDate } from '@/lib/utils';
 import { Plus, Eye, Calendar as CalendarIcon, Users, Clock } from 'lucide-react';
 import { notificationService } from '@/lib/notifications';
@@ -175,39 +176,24 @@ export default function CalendarView() {
   useEffect(() => {
     if (!user) return;
 
-    // Listen for all tasks
-    const tasksQuery = query(collection(db, 'tasks'));
-    const tasksUnsubscribe = onSnapshot(tasksQuery, (snapshot) => {
-      const tasksData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate(),
-        deadline: doc.data().deadline?.toDate(),
-        assignedAt: doc.data().assignedAt?.toDate(),
-        completedAt: doc.data().completedAt?.toDate(),
-        submittedAt: doc.data().submittedAt?.toDate(),
-        startDate: doc.data().startDate?.toDate(),
-      })) as Task[];
-      
-      setTasks(tasksData);
-      setLoading(false);
-    });
+    // Use cached realtime listener for tasks
+    const tasksUnsubscribe = firebaseCache.setupRealtimeListener<Task>(
+      'tasks',
+      (tasksData) => {
+        setTasks(tasksData);
+        setLoading(false);
+        console.log(`📅 CalendarView: Loaded ${tasksData.length} tasks from cache/firestore`);
+      }
+    );
 
-    // Listen for calendar events
-    const eventsQuery = query(collection(db, 'calendar'));
-    const eventsUnsubscribe = onSnapshot(eventsQuery, (snapshot) => {
-      const eventsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        start: doc.data().start?.toDate(),
-        end: doc.data().end?.toDate(),
-        createdAt: doc.data().createdAt?.toDate(),
-      })) as CalendarEvent[];
-      
-      setCalendarEvents(eventsData);
-    }, (error) => {
-      console.error('Error fetching calendar events:', error);
-    });
+    // Use cached realtime listener for calendar events
+    const eventsUnsubscribe = firebaseCache.setupRealtimeListener<CalendarEvent>(
+      'calendar',
+      (eventsData) => {
+        setCalendarEvents(eventsData);
+        console.log(`📅 CalendarView: Loaded ${eventsData.length} calendar events from cache/firestore`);
+      }
+    );
 
     return () => {
       tasksUnsubscribe();
@@ -272,14 +258,10 @@ export default function CalendarView() {
       // Send notifications if enabled
       if (eventData.notificationSettings) {
         try {
-          // Get users based on employment type selection
-          const usersQuery = query(collection(db, 'users'));
-          const usersSnapshot = await getDocs(usersQuery);
-
-          const allUsers = usersSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })) as Array<{id: string} & any>;
+          // Get users from cache based on employment type selection
+          const allUsers = await firebaseCache.getCachedCollection<any>('users', {
+            where: [['isApproved', '==', true]]
+          });
 
           // Filter users based on participant groups and notification settings
           console.log('All users:', allUsers.length);

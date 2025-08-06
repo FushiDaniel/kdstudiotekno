@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Notification } from '@/types';
 import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { firebaseCache } from '@/lib/firebase-cache';
 import { notificationService } from '@/lib/notifications';
 import { fcmService } from '@/lib/fcm';
 
@@ -39,6 +40,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           if (initialized) {
             console.log('FCM initialized successfully');
             fcmService.setupForegroundMessageHandler();
+            
+            // If user is already logged in, associate token with user
+            if (user) {
+              await fcmService.updateTokenWithUserId(user.uid);
+            }
           } else {
             console.log('FCM initialization failed, will use email fallback');
           }
@@ -51,7 +57,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     };
 
     initializeFCM();
-  }, []);
+  }, [user]); // Add user as dependency
 
   useEffect(() => {
     if (!user) {
@@ -59,27 +65,22 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    const q = query(
-      collection(db, 'notifications'),
-      where('userId', '==', user.uid)
+    // Use cached realtime listener for notifications
+    const unsubscribe = firebaseCache.setupRealtimeListener<Notification>(
+      'notifications',
+      (notifs) => {
+        // Sort manually
+        const sortedNotifs = notifs.sort((a, b) => 
+          b.createdAt.getTime() - a.createdAt.getTime()
+        );
+        
+        setNotifications(sortedNotifs);
+        console.log(`🔔 NotificationManager: Loaded ${sortedNotifs.length} notifications from cache/firestore`);
+      },
+      {
+        where: [['userId', '==', user.uid]]
+      }
     );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const notifs = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-      })) as Notification[];
-      
-      // Sort manually
-      const sortedNotifs = notifs.sort((a, b) => 
-        b.createdAt.getTime() - a.createdAt.getTime()
-      );
-      
-      setNotifications(sortedNotifs);
-    }, (error) => {
-      console.error('Error fetching notifications:', error);
-    });
 
     return () => unsubscribe();
   }, [user]);

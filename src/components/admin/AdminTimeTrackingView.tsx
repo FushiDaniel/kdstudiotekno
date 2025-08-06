@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ClockInRecord, User } from '@/types';
 import { collection, query, onSnapshot, getDocs, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { firebaseCache } from '@/lib/firebase-cache';
 import { formatDate, formatTime } from '@/lib/utils';
 import { Clock, MapPin, Search, Calendar, Users, Filter } from 'lucide-react';
 
@@ -21,17 +22,11 @@ export default function AdminTimeTrackingView() {
   const [selectedRecord, setSelectedRecord] = useState<ClockInRecord | null>(null);
   const [showMap, setShowMap] = useState(false);
 
-  // Fetch all FT and PT users
+  // Fetch all FT and PT users using cache
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const allUsers = usersSnapshot.docs.map(doc => ({
-          uid: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-          updatedAt: doc.data().updatedAt?.toDate() || new Date()
-        })) as User[];
+        const allUsers = await firebaseCache.getCachedCollection<User>('users');
         
         // Filter for FT and PT users only
         const ftPtUsers = allUsers.filter(user => 
@@ -39,6 +34,7 @@ export default function AdminTimeTrackingView() {
         );
         
         setUsers(ftPtUsers);
+        console.log(`⏰ AdminTimeTrackingView: Loaded ${ftPtUsers.length} FT/PT users from cache/firestore`);
       } catch (error) {
         console.error('Error fetching users:', error);
       }
@@ -47,37 +43,29 @@ export default function AdminTimeTrackingView() {
     fetchUsers();
   }, []);
 
-  // Fetch clock-in records
+  // Fetch clock-in records using cache
   useEffect(() => {
-    const q = query(
-      collection(db, 'clockInRecords'),
-      orderBy('clockInTime', 'desc')
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      try {
-        const records = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            clockInTime: data.clockInTime?.toDate() || new Date(),
-            clockOutTime: data.clockOutTime?.toDate(),
-          } as ClockInRecord;
-        });
-        
-        // Filter for FT and PT users only
-        const ftPtRecords = records.filter(record => 
-          record.userStaffId?.startsWith('FT') || record.userStaffId?.startsWith('PT')
-        );
-        
-        setClockInRecords(ftPtRecords);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching clock in records:', error);
-        setLoading(false);
+    const unsubscribe = firebaseCache.setupRealtimeListener<ClockInRecord>(
+      'clockInRecords',
+      (records) => {
+        try {
+          // Filter for FT and PT users only
+          const ftPtRecords = records.filter(record => 
+            record.userStaffId?.startsWith('FT') || record.userStaffId?.startsWith('PT')
+          );
+          
+          setClockInRecords(ftPtRecords);
+          setLoading(false);
+          console.log(`⏰ AdminTimeTrackingView: Loaded ${ftPtRecords.length} FT/PT clock-in records from cache/firestore`);
+        } catch (error) {
+          console.error('Error processing clock in records:', error);
+          setLoading(false);
+        }
+      },
+      {
+        orderBy: ['clockInTime', 'desc']
       }
-    });
+    );
 
     return () => unsubscribe();
   }, []);

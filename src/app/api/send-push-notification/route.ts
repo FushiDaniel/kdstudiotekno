@@ -82,13 +82,27 @@ export async function POST(request: NextRequest) {
     }
 
     const tokensSnapshot = await getDocs(tokensQuery);
-    const tokens = tokensSnapshot.docs.map(doc => doc.data().token);
+    const tokens = tokensSnapshot.docs
+      .map(doc => doc.data().token)
+      .filter(token => token && token.length > 0); // Filter out empty tokens
+
+    console.log(`Found ${tokens.length} FCM tokens for userId: ${userId || 'all users'}`);
 
     if (tokens.length === 0) {
-      console.log('No FCM tokens found for notification');
+      console.log('No FCM tokens found for notification - this explains the fallback to email');
       return NextResponse.json({
         success: false,
-        message: 'No FCM tokens found'
+        message: `No FCM tokens found for ${userId ? 'user ' + userId : 'any users'}. Email fallback will be used.`,
+        debug: {
+          totalDocs: tokensSnapshot.docs.length,
+          userId: userId,
+          hasTokens: tokensSnapshot.docs.map(doc => ({ 
+            id: doc.id, 
+            userId: doc.data().userId, 
+            hasToken: !!doc.data().token,
+            active: doc.data().active
+          }))
+        }
       });
     }
 

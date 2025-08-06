@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task, TaskStatus } from '@/types';
 import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { firebaseCache } from '@/lib/firebase-cache';
 import { formatCurrency, formatDate, formatMessageWithLinks } from '@/lib/utils';
 import { Clock, DollarSign, FileText, CheckCircle } from 'lucide-react';
 import TaskDetailView from './TaskDetailView';
@@ -55,63 +56,40 @@ export default function TaskView() {
   useEffect(() => {
     if (!user) return;
 
-    // Listen for user's assigned tasks - simple query to avoid index
-    const userTasksQuery = query(
-      collection(db, 'tasks'),
-      where('assignedTo', '==', user.uid)
+    // Use cached realtime listener for user's assigned tasks
+    const userTasksUnsubscribe = firebaseCache.setupRealtimeListener<Task>(
+      'tasks',
+      (tasks) => {
+        // Sort manually to avoid index requirement
+        const sortedTasks = tasks.sort((a, b) => 
+          b.createdAt.getTime() - a.createdAt.getTime()
+        );
+        
+        setUserTasks(sortedTasks);
+        setLoading(false);
+        console.log(`📋 TaskView: Loaded ${sortedTasks.length} user tasks from cache/firestore`);
+      },
+      {
+        where: [['assignedTo', '==', user.uid]]
+      }
     );
 
-    const userTasksUnsubscribe = onSnapshot(userTasksQuery, (snapshot) => {
-      const tasks = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate(),
-        deadline: doc.data().deadline?.toDate(),
-        assignedAt: doc.data().assignedAt?.toDate(),
-        completedAt: doc.data().completedAt?.toDate(),
-        submittedAt: doc.data().submittedAt?.toDate(),
-        startDate: doc.data().startDate?.toDate(),
-      })) as Task[];
-      
-      // Sort manually to avoid index requirement
-      const sortedTasks = tasks.sort((a, b) => 
-        b.createdAt.getTime() - a.createdAt.getTime()
-      );
-      
-      setUserTasks(sortedTasks);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error fetching user tasks:', error);
-      setLoading(false);
-    });
-
-    // Listen for open tasks - simplified query
-    const openTasksQuery = query(
-      collection(db, 'tasks'),
-      where('status', '==', TaskStatus.NOT_STARTED)
+    // Use cached realtime listener for open tasks
+    const openTasksUnsubscribe = firebaseCache.setupRealtimeListener<Task>(
+      'tasks',
+      (tasks) => {
+        // Filter out assigned tasks and sort manually
+        const openTasks = tasks
+          .filter(task => !task.assignedTo)
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        
+        setOpenTasks(openTasks);
+        console.log(`📋 TaskView: Loaded ${openTasks.length} open tasks from cache/firestore`);
+      },
+      {
+        where: [['status', '==', TaskStatus.NOT_STARTED]]
+      }
     );
-
-    const openTasksUnsubscribe = onSnapshot(openTasksQuery, (snapshot) => {
-      const tasks = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate(),
-        deadline: doc.data().deadline?.toDate(),
-        assignedAt: doc.data().assignedAt?.toDate(),
-        completedAt: doc.data().completedAt?.toDate(),
-        submittedAt: doc.data().submittedAt?.toDate(),
-        startDate: doc.data().startDate?.toDate(),
-      })) as Task[];
-      
-      // Filter out assigned tasks and sort manually
-      const openTasks = tasks
-        .filter(task => !task.assignedTo)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      
-      setOpenTasks(openTasks);
-    }, (error) => {
-      console.error('Error fetching open tasks:', error);
-    });
 
     return () => {
       userTasksUnsubscribe();

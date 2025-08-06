@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Task, TaskStatus, TaskPaymentStatus, User } from '@/types';
 import { collection, query, where, onSnapshot, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { firebaseCache } from '@/lib/firebase-cache';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { DollarSign, CheckCircle, XCircle, Search, Users, Calendar, FileText, CreditCard } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
@@ -24,51 +25,35 @@ export default function AdminPaymentView() {
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<TaskPaymentStatus | 'all'>('all');
   const [processingPayments, setProcessingPayments] = useState<Set<string>>(new Set());
 
-  // Fetch tasks with completed status for payment processing
+  // Fetch tasks with completed status for payment processing using cache
   useEffect(() => {
-    const q = query(
-      collection(db, 'tasks'),
-      where('status', '==', TaskStatus.COMPLETED)
+    const unsubscribe = firebaseCache.setupRealtimeListener<Task>(
+      'tasks',
+      (completedTasks) => {
+        // Sort by reviewed date (most recent first)
+        const sortedTasks = completedTasks.sort((a, b) => 
+          (b.reviewedAt?.getTime() || 0) - (a.reviewedAt?.getTime() || 0)
+        );
+        
+        setTasks(sortedTasks);
+        setLoading(false);
+        console.log(`💰 AdminPaymentView: Loaded ${sortedTasks.length} completed tasks from cache/firestore`);
+      },
+      {
+        where: [['status', '==', TaskStatus.COMPLETED]]
+      }
     );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const completedTasks = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate(),
-        deadline: doc.data().deadline?.toDate(),
-        assignedAt: doc.data().assignedAt?.toDate(),
-        completedAt: doc.data().completedAt?.toDate(),
-        submittedAt: doc.data().submittedAt?.toDate(),
-        reviewedAt: doc.data().reviewedAt?.toDate(),
-      })) as Task[];
-      
-      // Sort by reviewed date (most recent first)
-      const sortedTasks = completedTasks.sort((a, b) => 
-        (b.reviewedAt?.getTime() || 0) - (a.reviewedAt?.getTime() || 0)
-      );
-      
-      setTasks(sortedTasks);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error fetching tasks:', error);
-      setLoading(false);
-    });
 
     return () => unsubscribe();
   }, []);
 
-  // Fetch users for dropdown
+  // Fetch users for dropdown using cache
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const allUsers = usersSnapshot.docs.map(doc => ({
-          uid: doc.id,
-          ...doc.data()
-        })) as User[];
-        
+        const allUsers = await firebaseCache.getCachedCollection<User>('users');
         setUsers(allUsers.filter(u => !u.isAdmin)); // Only non-admin users
+        console.log(`👥 AdminPaymentView: Loaded ${allUsers.length} users from cache/firestore`);
       } catch (error) {
         console.error('Error fetching users:', error);
       }

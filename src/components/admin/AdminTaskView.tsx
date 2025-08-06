@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Task, TaskStatus, TaskPaymentStatus, TaskMessage, User } from '@/types';
 import { collection, query, onSnapshot, doc, updateDoc, where, addDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { firebaseCache } from '@/lib/firebase-cache';
 import { formatCurrency, formatDate, formatMessageWithLinks } from '@/lib/utils';
 import { Plus, Search, DollarSign, Clock, Users, X, CheckCircle, FileText, MessageCircle, Send, UserPlus, Edit, Trash2 } from 'lucide-react';
 import CreateTaskForm from './CreateTaskForm';
@@ -41,49 +42,34 @@ export default function AdminTaskView() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    // Simple query without orderBy to avoid index requirement
-    const q = query(collection(db, 'tasks'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const allTasks = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate(),
-        deadline: doc.data().deadline?.toDate(),
-        assignedAt: doc.data().assignedAt?.toDate(),
-        completedAt: doc.data().completedAt?.toDate(),
-        submittedAt: doc.data().submittedAt?.toDate(),
-        startDate: doc.data().startDate?.toDate(),
-      })) as Task[];
-      
-      // Sort manually to avoid index requirement
-      const sortedTasks = allTasks.sort((a, b) => 
-        b.createdAt.getTime() - a.createdAt.getTime()
-      );
-      
-      setTasks(sortedTasks);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error fetching tasks:', error);
-      setLoading(false);
-    });
+    // Use cached realtime listener for tasks
+    const unsubscribe = firebaseCache.setupRealtimeListener<Task>(
+      'tasks',
+      (allTasks) => {
+        // Sort manually to avoid index requirement
+        const sortedTasks = allTasks.sort((a, b) => 
+          b.createdAt.getTime() - a.createdAt.getTime()
+        );
+        
+        setTasks(sortedTasks);
+        setLoading(false);
+        console.log(`📋 AdminTaskView: Loaded ${sortedTasks.length} tasks from cache/firestore`);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
 
-  // Fetch users for assignment
+  // Fetch users for assignment with caching
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const allUsers = usersSnapshot.docs.map(doc => ({
-          uid: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-          updatedAt: doc.data().updatedAt?.toDate() || new Date()
-        })) as User[];
+        const allUsers = await firebaseCache.getCachedCollection<User>('users', {
+          where: [['isApproved', '==', true]]
+        });
         
-        setUsers(allUsers.filter(u => !u.isAdmin && u.isApproved)); // Only approved non-admin users
+        setUsers(allUsers.filter(u => !u.isAdmin)); // Only approved non-admin users
+        console.log(`👥 AdminTaskView: Loaded ${allUsers.length} users from cache/firestore`);
       } catch (error) {
         console.error('Error fetching users:', error);
       }
