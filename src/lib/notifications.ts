@@ -147,7 +147,7 @@ class NotificationService {
     }
   }
 
-  // Combined notification method - FCM Push + Email fallback with rate limiting
+  // Combined notification method - FCM Push + Email fallback
   async sendNotification(
     userId: string,
     userEmail: string,
@@ -173,17 +173,10 @@ class NotificationService {
         return; // Success, no need for email fallback
       }
     } catch (error) {
-      console.warn('Push notification failed, evaluating email fallback:', error);
+      console.warn('Push notification failed, falling back to email:', error);
     }
 
-    // Only use email fallback for critical notifications
-    const criticalTypes = ['task_approved', 'task_rejected', 'payment_completed'];
-    if (!criticalTypes.includes(type)) {
-      console.log(`Skipping email fallback for non-critical notification type: ${type}`);
-      return; // Skip email for non-critical notifications to save costs
-    }
-
-    // Fallback to email notification for critical types only
+    // Fallback to email notification for all types
     try {
       await this.sendEmailNotification(userEmail, title, message);
       console.log('Email notification sent successfully to:', userEmail);

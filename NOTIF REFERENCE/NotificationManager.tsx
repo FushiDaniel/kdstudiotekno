@@ -39,7 +39,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           if (initialized) {
             console.log('FCM initialized successfully');
             fcmService.setupForegroundMessageHandler();
-            
           } else {
             console.log('FCM initialization failed, will use email fallback');
           }
