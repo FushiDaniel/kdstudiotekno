@@ -12,7 +12,6 @@ import { ref, getDownloadURL } from 'firebase/storage';
 import { Search, Users, Phone, Mail, MapPin, X, Building, CreditCard, UserCheck, CheckCircle, XCircle, Clock, Award, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/utils';
-import SkillVerificationView from '@/components/admin/SkillVerificationView';
 import SkillManagement from '@/components/admin/SkillManagement';
 
 const getStatusColor = (status: string) => {
@@ -57,7 +56,7 @@ export default function DirectoryView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<'directory' | 'pending' | 'approved' | 'skills' | 'manage-skills'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'pending' | 'approved' | 'manage-skills'>('directory');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
 
@@ -185,6 +184,35 @@ export default function DirectoryView() {
     }
   };
 
+  const handleVerifySkill = async (userSkillId: string, verified: boolean) => {
+    if (!currentUser) return;
+
+    setIsUpdating(userSkillId);
+    try {
+      const updateData: any = {
+        verified,
+        updatedAt: Timestamp.fromDate(new Date())
+      };
+
+      if (verified) {
+        updateData.verifiedBy = currentUser.uid;
+        updateData.verifiedByName = currentUser.fullname;
+        updateData.verifiedAt = Timestamp.fromDate(new Date());
+      } else {
+        updateData.verifiedBy = null;
+        updateData.verifiedByName = null;
+        updateData.verifiedAt = null;
+      }
+
+      await updateDoc(doc(db, 'userSkills', userSkillId), updateData);
+    } catch (error) {
+      console.error('Error updating skill verification:', error);
+      alert('Gagal mengemas kini pengesahan kemahiran. Sila cuba lagi.');
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
   const getCurrentUsers = () => {
     switch (activeTab) {
       case 'directory':
@@ -223,7 +251,7 @@ export default function DirectoryView() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      {activeTab !== 'skills' && activeTab !== 'manage-skills' && (
+      {activeTab !== 'manage-skills' && (
         <div className="text-center mb-12">
           <div className="max-w-2xl mx-auto">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -282,18 +310,6 @@ export default function DirectoryView() {
                 <span className="hidden sm:inline">Diluluskan</span> ({approvedUsers.length})
               </Button>
               <Button
-                variant={activeTab === 'skills' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('skills')}
-                className={`flex items-center gap-1 px-3 py-2 rounded-md transition-all text-sm whitespace-nowrap ${
-                  activeTab === 'skills' 
-                    ? 'bg-black text-white' 
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                <Award className="h-4 w-4" />
-                <span className="hidden sm:inline">Pengesahan</span>
-              </Button>
-              <Button
                 variant={activeTab === 'manage-skills' ? 'default' : 'ghost'}
                 onClick={() => setActiveTab('manage-skills')}
                 className={`flex items-center gap-1 px-3 py-2 rounded-md transition-all text-sm whitespace-nowrap ${
@@ -303,7 +319,7 @@ export default function DirectoryView() {
                 }`}
               >
                 <Award className="h-4 w-4" />
-                <span className="hidden sm:inline">Urus</span>
+                <span className="hidden sm:inline">Kemahiran</span>
               </Button>
             </div>
           </div>
@@ -311,7 +327,7 @@ export default function DirectoryView() {
       )}
 
       {/* Search */}
-      {activeTab !== 'skills' && activeTab !== 'manage-skills' && (
+      {activeTab !== 'manage-skills' && (
         <div className="mb-6">
           <div className="max-w-md mx-auto">
             <div className="relative">
@@ -383,7 +399,7 @@ export default function DirectoryView() {
       )}
 
       {/* User Grid */}
-      {activeTab !== 'skills' && activeTab !== 'manage-skills' && (
+      {activeTab !== 'manage-skills' && (
         <div className={activeTab === 'directory' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4" : "space-y-6"}>
           {filteredUsers.length === 0 ? (
             <div className={activeTab === 'directory' ? "col-span-full text-center py-8" : "text-center py-8"}>
@@ -501,18 +517,65 @@ export default function DirectoryView() {
               </div>
 
               {/* Skills */}
-              {selectedUser.skills && selectedUser.skills.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="font-medium text-gray-900 mb-2">Kemahiran</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedUser.skills.map((skill, index) => (
-                      <Badge key={index} variant="secondary">
-                        {skill}
-                      </Badge>
-                    ))}
+              {(() => {
+                const userSkillsForModal = getUserSkills(selectedUser.uid);
+                return userSkillsForModal.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="font-medium text-gray-900 mb-2">Kemahiran</h4>
+                    <div className="space-y-2">
+                      {userSkillsForModal.map((userSkill) => (
+                        <div key={userSkill.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <Badge 
+                              variant="secondary" 
+                              className={`${userSkill.verified ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}
+                            >
+                              <div className="flex items-center space-x-1">
+                                <span>{userSkill.skillName}</span>
+                                {userSkill.verified && (
+                                  <Check className="h-3 w-3 text-blue-600" />
+                                )}
+                              </div>
+                            </Badge>
+                            {userSkill.verified && userSkill.verifiedByName && (
+                              <span className="text-xs text-gray-500">
+                                oleh {userSkill.verifiedByName}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {currentUser?.isAdmin && (
+                            <div className="flex space-x-1">
+                              {!userSkill.verified ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleVerifySkill(userSkill.id, true)}
+                                  disabled={isUpdating === userSkill.id}
+                                  className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs"
+                                >
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Sahkan
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleVerifySkill(userSkill.id, false)}
+                                  disabled={isUpdating === userSkill.id}
+                                  className="text-red-600 border-red-200 hover:bg-red-50 px-2 py-1 text-xs"
+                                >
+                                  <X className="h-3 w-3 mr-1" />
+                                  Batal
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Admin Only Section */}
               {currentUser?.isAdmin && (
@@ -544,9 +607,6 @@ export default function DirectoryView() {
           </Card>
         </div>
       )}
-      
-      {/* Skills Verification View */}
-      {activeTab === 'skills' && <SkillVerificationView />}
       
       {/* Skill Management View */}
       {activeTab === 'manage-skills' && <SkillManagement />}

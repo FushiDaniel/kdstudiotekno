@@ -107,12 +107,14 @@ export class FCMService {
       console.error('FCM: Failed to get registration token:', error);
       
       // More specific error handling
-      if (error.code === 'messaging/token-subscribe-failed') {
-        console.error('FCM: Token subscription failed - check Firebase project configuration');
-      } else if (error.code === 'messaging/permission-blocked') {
-        console.error('FCM: Notification permission blocked by user');
-      } else if (error.code === 'messaging/vapid-key-required') {
-        console.error('FCM: VAPID key is required');
+      if (error && typeof error === 'object' && 'code' in error) {
+        if (error.code === 'messaging/token-subscribe-failed') {
+          console.error('FCM: Token subscription failed - check Firebase project configuration');
+        } else if (error.code === 'messaging/permission-blocked') {
+          console.error('FCM: Notification permission blocked by user');
+        } else if (error.code === 'messaging/vapid-key-required') {
+          console.error('FCM: VAPID key is required');
+        }
       }
       
       return null;
