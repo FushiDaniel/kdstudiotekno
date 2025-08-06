@@ -94,11 +94,22 @@ class NotificationService {
   // Send notification to Firestore (for in-app notifications)
   async sendInAppNotification(notificationData: Omit<NotificationData, 'createdAt' | 'isRead'>): Promise<void> {
     try {
-      await addDoc(collection(db, 'notifications'), {
-        ...notificationData,
+      // Clean the data to remove undefined values that Firestore doesn't accept
+      const cleanData = {
+        userId: notificationData.userId,
+        title: notificationData.title,
+        message: notificationData.message,
+        type: notificationData.type,
         isRead: false,
         createdAt: Timestamp.fromDate(new Date())
-      });
+      };
+
+      // Only add relatedId if it's defined and not null
+      if (notificationData.relatedId !== undefined && notificationData.relatedId !== null) {
+        (cleanData as any).relatedId = notificationData.relatedId;
+      }
+
+      await addDoc(collection(db, 'notifications'), cleanData);
       console.log('In-app notification sent successfully');
     } catch (error) {
       console.error('Failed to send in-app notification:', error);

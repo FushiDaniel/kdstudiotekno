@@ -27,6 +27,12 @@ export class FCMService {
         return false;
       }
 
+      // Check if we're in a secure context (HTTPS required)
+      if (!window.isSecureContext) {
+        console.warn('FCM: Not in secure context (HTTPS required)');
+        return false;
+      }
+
       // Get messaging instance
       this.messaging = getMessagingInstance();
       if (!this.messaging) {
@@ -41,22 +47,33 @@ export class FCMService {
         return false;
       }
 
-      // Register service worker
-      const swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-        scope: '/'
-      });
-      console.log('FCM: Service Worker registered successfully');
-
-      // Get FCM registration token
-      const token = await this.getRegistrationToken();
-      if (token) {
-        console.log('FCM: Registration token obtained:', token.substring(0, 20) + '...');
-        // Store token for sending push notifications (userId will be passed separately)
-        await this.saveTokenToServer(token);
-        return true;
+      // Register service worker with better error handling
+      try {
+        const swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
+          scope: '/'
+        });
+        console.log('FCM: Service Worker registered successfully');
+      } catch (swError) {
+        console.warn('FCM: Service Worker registration failed:', swError);
+        // Continue without service worker for now
       }
 
-      return false;
+      // Try to get FCM registration token (this is where the auth error occurs)
+      try {
+        const token = await this.getRegistrationToken();
+        if (token) {
+          console.log('FCM: Registration token obtained:', token.substring(0, 20) + '...');
+          // Store token for sending push notifications (userId will be passed separately)
+          await this.saveTokenToServer(token);
+          return true;
+        } else {
+          console.log('FCM: No token obtained, but continuing...');
+          return false;
+        }
+      } catch (tokenError) {
+        console.warn('FCM: Token registration failed, continuing without push notifications:', tokenError);
+        return false;
+      }
     } catch (error) {
       console.error('FCM: Initialization failed:', error);
       return false;
@@ -70,13 +87,34 @@ export class FCMService {
         return null;
       }
 
+      // Check if we're in a secure context (required for FCM)
+      if (!window.isSecureContext) {
+        console.warn('FCM: Not in secure context (HTTPS required)');
+        return null;
+      }
+
       const token = await getToken(this.messaging, {
         vapidKey: this.vapidKey
       });
 
-      return token || null;
+      if (!token) {
+        console.warn('FCM: No registration token available. Request permission to generate one.');
+        return null;
+      }
+
+      return token;
     } catch (error) {
       console.error('FCM: Failed to get registration token:', error);
+      
+      // More specific error handling
+      if (error.code === 'messaging/token-subscribe-failed') {
+        console.error('FCM: Token subscription failed - check Firebase project configuration');
+      } else if (error.code === 'messaging/permission-blocked') {
+        console.error('FCM: Notification permission blocked by user');
+      } else if (error.code === 'messaging/vapid-key-required') {
+        console.error('FCM: VAPID key is required');
+      }
+      
       return null;
     }
   }
