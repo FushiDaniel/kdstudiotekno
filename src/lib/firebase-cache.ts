@@ -75,23 +75,28 @@ class FirebaseCache {
 
     console.log(`🔄 Cache: Fetching fresh data for ${collectionName}`);
     
-    // Build query
-    let firestoreQuery = collection(db, collectionName);
+    // Build query constraints
+    const constraints = [];
     
     if (queryParams?.where) {
       queryParams.where.forEach(([field, operator, value]) => {
-        firestoreQuery = query(firestoreQuery, where(field, operator, value));
+        constraints.push(where(field, operator, value));
       });
     }
     
     if (queryParams?.orderBy) {
       const [field, direction] = queryParams.orderBy;
-      firestoreQuery = query(firestoreQuery, orderBy(field, direction));
+      constraints.push(orderBy(field, direction));
     }
     
     if (queryParams?.limit) {
-      firestoreQuery = query(firestoreQuery, limit(queryParams.limit));
+      constraints.push(limit(queryParams.limit));
     }
+
+    // Build final query
+    const firestoreQuery = constraints.length > 0 
+      ? query(collection(db, collectionName), ...constraints)
+      : collection(db, collectionName);
 
     const snapshot = await getDocs(firestoreQuery);
     const data = snapshot.docs.map(doc => ({
@@ -257,23 +262,28 @@ class FirebaseCache {
       limit?: number;
     }
   ) {
-    // Build query
-    let firestoreQuery = collection(db, collectionName);
+    // Build query constraints
+    const constraints = [];
     
     if (queryParams?.where) {
       queryParams.where.forEach(([field, operator, value]) => {
-        firestoreQuery = query(firestoreQuery, where(field, operator, value));
+        constraints.push(where(field, operator, value));
       });
     }
     
     if (queryParams?.orderBy) {
       const [field, direction] = queryParams.orderBy;
-      firestoreQuery = query(firestoreQuery, orderBy(field, direction));
+      constraints.push(orderBy(field, direction));
     }
     
     if (queryParams?.limit) {
-      firestoreQuery = query(firestoreQuery, limit(queryParams.limit));
+      constraints.push(limit(queryParams.limit));
     }
+
+    // Build final query
+    const firestoreQuery = constraints.length > 0 
+      ? query(collection(db, collectionName), ...constraints)
+      : collection(db, collectionName);
 
     return onSnapshot(firestoreQuery, (snapshot) => {
       const data = snapshot.docs.map(doc => ({
