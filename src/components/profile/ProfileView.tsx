@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { AvailabilityStatus } from '@/types';
+import { AvailabilityStatus, UserSkill } from '@/types';
 import { 
   Mail, 
   Phone, 
@@ -18,10 +18,13 @@ import {
   Settings
 } from 'lucide-react';
 import Image from 'next/image';
+import SkillSelector from './SkillSelector';
 
 export default function ProfileView() {
   const { user, signOut, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingSkills, setIsEditingSkills] = useState(false);
+  const [userSkills, setUserSkills] = useState<UserSkill[]>([]);
   const [formData, setFormData] = useState({
     fullname: user?.fullname || '',
     phoneNumber: user?.phoneNumber || '',
@@ -318,24 +321,14 @@ export default function ProfileView() {
           </Card>
 
           {/* Skills */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Kemahiran</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {user?.skills && user.skills.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {user.skills.map((skill, index) => (
-                    <Badge key={index} variant="secondary">
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500">Tiada kemahiran disetkan</p>
-              )}
-            </CardContent>
-          </Card>
+          {user && (
+            <SkillSelector 
+              user={user}
+              onSkillsChange={setUserSkills}
+              isEditing={isEditingSkills}
+              onToggleEdit={() => setIsEditingSkills(!isEditingSkills)}
+            />
+          )}
 
           {/* Account Actions */}
           <Card>

@@ -5,13 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { User } from '@/types';
+import { User, UserSkill } from '@/types';
 import { collection, query, onSnapshot, where, doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 import { ref, getDownloadURL } from 'firebase/storage';
-import { Search, Users, Phone, Mail, MapPin, X, Building, CreditCard, UserCheck, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Search, Users, Phone, Mail, MapPin, X, Building, CreditCard, UserCheck, CheckCircle, XCircle, Clock, Award, Check } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/utils';
+import SkillVerificationView from '@/components/admin/SkillVerificationView';
+import SkillManagement from '@/components/admin/SkillManagement';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -51,10 +53,11 @@ export default function DirectoryView() {
   const [users, setUsers] = useState<User[]>([]);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [approvedUsers, setApprovedUsers] = useState<User[]>([]);
+  const [userSkills, setUserSkills] = useState<UserSkill[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<'directory' | 'pending' | 'approved'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'pending' | 'approved' | 'skills' | 'manage-skills'>('directory');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
 
@@ -127,10 +130,23 @@ export default function DirectoryView() {
       });
     }
 
+    // Listen for user skills
+    const userSkillsQuery = query(collection(db, 'userSkills'));
+    const userSkillsUnsubscribe = onSnapshot(userSkillsQuery, (snapshot) => {
+      const skills = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        assignedAt: doc.data().assignedAt?.toDate() || new Date(),
+        verifiedAt: doc.data().verifiedAt?.toDate()
+      })) as UserSkill[];
+      setUserSkills(skills);
+    });
+
     return () => {
       allUsersUnsubscribe();
       pendingUnsubscribe();
       approvedUnsubscribe();
+      userSkillsUnsubscribe();
     };
   }, [currentUser?.isAdmin]);
 
@@ -182,6 +198,10 @@ export default function DirectoryView() {
     }
   };
 
+  const getUserSkills = (userId: string) => {
+    return userSkills.filter(skill => skill.userId === userId);
+  };
+
   const filteredUsers = getCurrentUsers().filter(user => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -203,20 +223,22 @@ export default function DirectoryView() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="text-center mb-12">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            {activeTab === 'directory' ? 'Direktori Staf' : 
-             activeTab === 'pending' ? 'Permohonan Keahlian' : 
-             'Ahli Diluluskan'}
-          </h1>
-          <p className="text-lg text-gray-600">
-            {activeTab === 'directory' ? 'Senarai ahli pasukan KDStudio' : 
-             activeTab === 'pending' ? 'Senarai permohonan yang menunggu kelulusan' : 
-             'Senarai ahli yang telah diluluskan'}
-          </p>
+      {activeTab !== 'skills' && activeTab !== 'manage-skills' && (
+        <div className="text-center mb-12">
+          <div className="max-w-2xl mx-auto">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              {activeTab === 'directory' ? 'Direktori Staf' : 
+               activeTab === 'pending' ? 'Permohonan Keahlian' : 
+               'Ahli Diluluskan'}
+            </h1>
+            <p className="text-lg text-gray-600">
+              {activeTab === 'directory' ? 'Senarai ahli pasukan KDStudio' : 
+               activeTab === 'pending' ? 'Senarai permohonan yang menunggu kelulusan' : 
+               'Senarai ahli yang telah diluluskan'}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Tab Navigation - Show only for admins */}
       {currentUser?.isAdmin && (
@@ -259,25 +281,51 @@ export default function DirectoryView() {
                 <UserCheck className="h-4 w-4" />
                 <span className="hidden sm:inline">Diluluskan</span> ({approvedUsers.length})
               </Button>
+              <Button
+                variant={activeTab === 'skills' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('skills')}
+                className={`flex items-center gap-1 px-3 py-2 rounded-md transition-all text-sm whitespace-nowrap ${
+                  activeTab === 'skills' 
+                    ? 'bg-black text-white' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <Award className="h-4 w-4" />
+                <span className="hidden sm:inline">Pengesahan</span>
+              </Button>
+              <Button
+                variant={activeTab === 'manage-skills' ? 'default' : 'ghost'}
+                onClick={() => setActiveTab('manage-skills')}
+                className={`flex items-center gap-1 px-3 py-2 rounded-md transition-all text-sm whitespace-nowrap ${
+                  activeTab === 'manage-skills' 
+                    ? 'bg-black text-white' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <Award className="h-4 w-4" />
+                <span className="hidden sm:inline">Urus</span>
+              </Button>
             </div>
           </div>
         </div>
       )}
 
       {/* Search */}
-      <div className="mb-6">
-        <div className="max-w-md mx-auto">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Cari mengikut nama, emel, ID staf atau kemahiran..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border-gray-200 focus:border-gray-400 focus:ring-1 focus:ring-gray-400"
-            />
+      {activeTab !== 'skills' && activeTab !== 'manage-skills' && (
+        <div className="mb-6">
+          <div className="max-w-md mx-auto">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Cari mengikut nama, emel, ID staf atau kemahiran..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border-gray-200 focus:border-gray-400 focus:ring-1 focus:ring-gray-400"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Stats - Only show for directory tab */}
       {activeTab === 'directory' && (
@@ -335,39 +383,42 @@ export default function DirectoryView() {
       )}
 
       {/* User Grid */}
-      <div className={activeTab === 'directory' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4" : "space-y-6"}>
-        {filteredUsers.length === 0 ? (
-          <div className={activeTab === 'directory' ? "col-span-full text-center py-8" : "text-center py-8"}>
-            <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-500">
-              {searchTerm ? `Tiada hasil untuk "${searchTerm}"` : 
-               activeTab === 'directory' ? 'Tiada staf dalam direktori' :
-               activeTab === 'pending' ? 'Tiada permohonan yang menunggu' :
-               'Tiada ahli yang diluluskan'}
-            </p>
-          </div>
-        ) : (
-          filteredUsers.map((user) => (
-            activeTab === 'directory' ? (
-              <UserCard 
-                key={user.uid} 
-                user={user} 
-                onClick={() => setSelectedUser(user)}
-                showDetails={currentUser?.isAdmin || false}
-              />
-            ) : (
-              <ApprovalUserCard
-                key={user.uid}
-                user={user}
-                onApprove={() => handleApproveUser(user.uid)}
-                onReject={() => handleRejectUser(user.uid)}
-                isUpdating={isUpdating === user.uid}
-                isPending={activeTab === 'pending'}
-              />
-            )
-          ))
-        )}
-      </div>
+      {activeTab !== 'skills' && activeTab !== 'manage-skills' && (
+        <div className={activeTab === 'directory' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4" : "space-y-6"}>
+          {filteredUsers.length === 0 ? (
+            <div className={activeTab === 'directory' ? "col-span-full text-center py-8" : "text-center py-8"}>
+              <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+              <p className="text-gray-500">
+                {searchTerm ? `Tiada hasil untuk "${searchTerm}"` : 
+                 activeTab === 'directory' ? 'Tiada staf dalam direktori' :
+                 activeTab === 'pending' ? 'Tiada permohonan yang menunggu' :
+                 'Tiada ahli yang diluluskan'}
+              </p>
+            </div>
+          ) : (
+            filteredUsers.map((user) => (
+              activeTab === 'directory' ? (
+                <UserCard 
+                  key={user.uid} 
+                  user={user} 
+                  userSkills={getUserSkills(user.uid)}
+                  onClick={() => setSelectedUser(user)}
+                  showDetails={currentUser?.isAdmin || false}
+                />
+              ) : (
+                <ApprovalUserCard
+                  key={user.uid}
+                  user={user}
+                  onApprove={() => handleApproveUser(user.uid)}
+                  onReject={() => handleRejectUser(user.uid)}
+                  isUpdating={isUpdating === user.uid}
+                  isPending={activeTab === 'pending'}
+                />
+              )
+            ))
+          )}
+        </div>
+      )}
 
       {/* User Details Modal */}
       {selectedUser && (
@@ -493,17 +544,24 @@ export default function DirectoryView() {
           </Card>
         </div>
       )}
+      
+      {/* Skills Verification View */}
+      {activeTab === 'skills' && <SkillVerificationView />}
+      
+      {/* Skill Management View */}
+      {activeTab === 'manage-skills' && <SkillManagement />}
     </div>
   );
 }
 
 interface UserCardProps {
   user: User;
+  userSkills: UserSkill[];
   onClick: () => void;
   showDetails: boolean;
 }
 
-function UserCard({ user, onClick, showDetails }: UserCardProps) {
+function UserCard({ user, userSkills, onClick, showDetails }: UserCardProps) {
   return (
     <Card 
       className="group hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-200 hover:border-gray-300 bg-white" 
@@ -570,17 +628,27 @@ function UserCard({ user, onClick, showDetails }: UserCardProps) {
         )}
 
         {/* Skills */}
-        {user.skills && user.skills.length > 0 && (
+        {userSkills && userSkills.length > 0 && (
           <div className="mb-3">
             <div className="flex flex-wrap gap-1">
-              {user.skills.slice(0, 3).map((skill, index) => (
-                <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-                  {skill}
+              {userSkills.slice(0, 3).map((userSkill, index) => (
+                <span 
+                  key={index} 
+                  className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded ${
+                    userSkill.verified 
+                      ? 'bg-blue-100 text-blue-800' 
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {userSkill.skillName}
+                  {userSkill.verified && (
+                    <Check className="h-3 w-3 text-blue-600" />
+                  )}
                 </span>
               ))}
-              {user.skills.length > 3 && (
+              {userSkills.length > 3 && (
                 <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-                  +{user.skills.length - 3}
+                  +{userSkills.length - 3}
                 </span>
               )}
             </div>

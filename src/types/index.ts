@@ -39,6 +39,7 @@ export interface User {
   phoneNumber: string;
   bio: string;
   skills: string[];
+  userSkills?: UserSkill[];
   availabilityStatus: AvailabilityStatus;
   employmentType: EmploymentType;
   staffId: string;
@@ -191,4 +192,25 @@ export interface CalendarEvent {
     notifyPartTime: boolean;
     notifyFullTime: boolean;
   };
+}
+
+export interface Skill {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: Date;
+  createdBy: string;
+  createdByName: string;
+}
+
+export interface UserSkill {
+  id: string;
+  userId: string;
+  skillId: string;
+  skillName: string;
+  verified: boolean;
+  verifiedBy?: string;
+  verifiedByName?: string;
+  verifiedAt?: Date;
+  assignedAt: Date;
 }

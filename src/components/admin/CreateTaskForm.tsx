@@ -5,8 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Task, TaskStatus, TaskPaymentStatus } from '@/types';
-import { collection, addDoc, Timestamp, getDocs, query, setDoc, doc, updateDoc } from 'firebase/firestore';
+import { Task, TaskStatus, TaskPaymentStatus, Skill, User } from '@/types';
+import { collection, addDoc, Timestamp, getDocs, query, setDoc, doc, updateDoc, onSnapshot, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { X, Plus } from 'lucide-react';
 import { notificationService } from '@/lib/notifications';
@@ -27,9 +27,27 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
     deadline: '',
     skills: [] as string[]
   });
-  const [newSkill, setNewSkill] = useState('');
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
+  const [selectedSkillId, setSelectedSkillId] = useState<string>('');
+  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
+  const [notificationType, setNotificationType] = useState<'all' | 'skilled'>('all');
   const [sendNotification, setSendNotification] = useState(true);
   const isEditMode = !!editingTask;
+
+  // Load available skills
+  useEffect(() => {
+    const skillsQuery = query(collection(db, 'skills'));
+    const unsubscribe = onSnapshot(skillsQuery, (snapshot) => {
+      const skills = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date()
+      })) as Skill[];
+      setAvailableSkills(skills);
+    });
+
+    return unsubscribe;
+  }, []);
 
   // Populate form with editing data
   useEffect(() => {
@@ -52,13 +70,15 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
     }
   }, [editingTask]);
 
-  const handleAddSkill = () => {
-    if (newSkill.trim() && !formData.skills.includes(newSkill.trim())) {
+  const handleAddSkill = (skillId: string) => {
+    const skill = availableSkills.find(s => s.id === skillId);
+    if (skill && !formData.skills.includes(skill.name)) {
       setFormData(prev => ({
         ...prev,
-        skills: [...prev.skills, newSkill.trim()]
+        skills: [...prev.skills, skill.name]
       }));
-      setNewSkill('');
+      setSelectedSkillId('');
+      setShowSkillDropdown(false);
     }
   };
 
@@ -67,6 +87,10 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
       ...prev,
       skills: prev.skills.filter(skill => skill !== skillToRemove)
     }));
+  };
+
+  const getUnselectedSkills = () => {
+    return availableSkills.filter(skill => !formData.skills.includes(skill.name));
   };
 
   const generateTaskId = async () => {
@@ -138,17 +162,43 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
         // Use the generated taskId as the document ID
         await setDoc(doc(db, 'tasks', taskId), newTask);
 
-        // Send notifications to all users if enabled
+        // Send notifications based on type
         if (sendNotification) {
           try {
-            const usersSnapshot = await getDocs(query(collection(db, 'users')));
-            const allUsers = usersSnapshot.docs.map(doc => ({
-              userId: doc.id,
-              email: doc.data().email
-            }));
+            let targetUsers: {userId: string; email: string}[] = [];
 
-            // Send notifications to all users
-            await notificationService.notifyNewTask(formData.name, allUsers);
+            if (notificationType === 'all') {
+              // Notify all users
+              const usersSnapshot = await getDocs(query(collection(db, 'users')));
+              targetUsers = usersSnapshot.docs.map(doc => ({
+                userId: doc.id,
+                email: doc.data().email
+              }));
+            } else if (notificationType === 'skilled' && formData.skills.length > 0) {
+              // Notify only users with required skills
+              const userSkillsSnapshot = await getDocs(query(
+                collection(db, 'userSkills'),
+                where('skillName', 'in', formData.skills)
+              ));
+              
+              const userIds = [...new Set(userSkillsSnapshot.docs.map(doc => doc.data().userId))];
+              
+              if (userIds.length > 0) {
+                const usersSnapshot = await getDocs(query(
+                  collection(db, 'users'),
+                  where('__name__', 'in', userIds)
+                ));
+                
+                targetUsers = usersSnapshot.docs.map(doc => ({
+                  userId: doc.id,
+                  email: doc.data().email
+                }));
+              }
+            }
+
+            if (targetUsers.length > 0) {
+              await notificationService.notifyNewTask(formData.name, targetUsers);
+            }
           } catch (notificationError) {
             console.warn('Failed to send new task notifications:', notificationError);
           }
@@ -242,22 +292,42 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
               <label className="block text-sm font-medium text-gray-900 mb-2">
                 Kemahiran Diperlukan
               </label>
-              <div className="flex gap-2 mb-2">
-                <Input
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  placeholder="Tambah kemahiran..."
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddSkill())}
-                  className="flex-1 bg-white text-gray-900 border-gray-300"
-                />
-                <Button 
-                  type="button" 
-                  onClick={handleAddSkill} 
-                  size="icon"
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+              <div className="mb-2">
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowSkillDropdown(!showSkillDropdown)}
+                    className="w-full justify-start bg-white text-gray-900 border-gray-300"
+                    disabled={getUnselectedSkills().length === 0}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {getUnselectedSkills().length === 0 
+                      ? 'Semua kemahiran telah ditambah' 
+                      : 'Pilih Kemahiran'
+                    }
+                  </Button>
+
+                  {showSkillDropdown && getUnselectedSkills().length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                      {getUnselectedSkills().map(skill => (
+                        <button
+                          key={skill.id}
+                          type="button"
+                          onClick={() => handleAddSkill(skill.id)}
+                          className="w-full px-3 py-2 text-left hover:bg-gray-100 flex items-center justify-between"
+                        >
+                          <div>
+                            <div className="font-medium">{skill.name}</div>
+                            {skill.description && (
+                              <div className="text-sm text-gray-500">{skill.description}</div>
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               
               {formData.skills.length > 0 && (
@@ -282,17 +352,55 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
             </div>
 
             {!isEditMode && (
-              <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
-                <input
-                  type="checkbox"
-                  id="sendNotification"
-                  checked={sendNotification}
-                  onChange={(e) => setSendNotification(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                />
-                <label htmlFor="sendNotification" className="text-sm font-medium text-gray-900">
-                  Hantar pemberitahuan kepada semua pengguna
-                </label>
+              <div className="space-y-3 p-3 bg-gray-50 rounded-md">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="sendNotification"
+                    checked={sendNotification}
+                    onChange={(e) => setSendNotification(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                  />
+                  <label htmlFor="sendNotification" className="text-sm font-medium text-gray-900">
+                    Hantar pemberitahuan
+                  </label>
+                </div>
+                
+                {sendNotification && (
+                  <div className="ml-6 space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="notifyAll"
+                        name="notificationType"
+                        value="all"
+                        checked={notificationType === 'all'}
+                        onChange={(e) => setNotificationType(e.target.value as 'all' | 'skilled')}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2"
+                      />
+                      <label htmlFor="notifyAll" className="text-sm text-gray-700">
+                        Kepada semua pengguna
+                      </label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        id="notifySkilled"
+                        name="notificationType"
+                        value="skilled"
+                        checked={notificationType === 'skilled'}
+                        onChange={(e) => setNotificationType(e.target.value as 'all' | 'skilled')}
+                        disabled={formData.skills.length === 0}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 focus:ring-2 disabled:opacity-50"
+                      />
+                      <label htmlFor="notifySkilled" className={`text-sm ${formData.skills.length === 0 ? 'text-gray-400' : 'text-gray-700'}`}>
+                        Hanya kepada pengguna dengan kemahiran yang dipilih
+                        {formData.skills.length === 0 && ' (Pilih kemahiran terlebih dahulu)'}
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
