@@ -101,7 +101,7 @@ class FirebaseCache {
     const snapshot = await getDocs(firestoreQuery);
     const data = snapshot.docs.map(doc => {
       const docData = doc.data();
-      const convertedData = { id: doc.id, ...docData };
+      const convertedData: any = { id: doc.id, ...docData };
       
       // Convert all potential date fields
       const dateFields = [
@@ -175,7 +175,7 @@ class FirebaseCache {
     }
 
     const docData = docSnap.data();
-    const convertedData = { id: docSnap.id, ...docData };
+    const convertedData: any = { id: docSnap.id, ...docData };
     
     // Convert all potential date fields
     const dateFields = [
@@ -309,7 +309,7 @@ class FirebaseCache {
     return onSnapshot(firestoreQuery, (snapshot) => {
       const data = snapshot.docs.map(doc => {
         const docData = doc.data();
-        const convertedData = { id: doc.id, ...docData };
+        const convertedData: any = { id: doc.id, ...docData };
         
         // Convert all potential date fields
         const dateFields = [
