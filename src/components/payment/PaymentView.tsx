@@ -44,7 +44,7 @@ export default function PaymentView() {
       
       // Sort manually to avoid index requirement
       const sortedTasks = userTasks.sort((a, b) => 
-        b.createdAt.getTime() - a.createdAt.getTime()
+        (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)
       );
       
       setTasks(sortedTasks);
@@ -77,11 +77,11 @@ export default function PaymentView() {
       return {
         completed: completedTasks.filter(task => {
           const taskDate = task.completedAt || task.createdAt;
-          return taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;
+          return taskDate && taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;
         }),
         pending: pendingTasks.filter(task => {
           const taskDate = task.submittedAt || task.createdAt;
-          return taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;
+          return taskDate && taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;
         })
       };
     } else if (filterPeriod === 'custom') {
@@ -89,11 +89,11 @@ export default function PaymentView() {
       return {
         completed: completedTasks.filter(task => {
           const taskDate = task.completedAt || task.createdAt;
-          return taskDate.getMonth() === selectedMonth && taskDate.getFullYear() === selectedYear;
+          return taskDate && taskDate.getMonth() === selectedMonth && taskDate.getFullYear() === selectedYear;
         }),
         pending: pendingTasks.filter(task => {
           const taskDate = task.submittedAt || task.createdAt;
-          return taskDate.getMonth() === selectedMonth && taskDate.getFullYear() === selectedYear;
+          return taskDate && taskDate.getMonth() === selectedMonth && taskDate.getFullYear() === selectedYear;
         })
       };
     } else {
@@ -111,6 +111,7 @@ export default function PaymentView() {
     .filter(t => {
       if (t.status !== TaskStatus.COMPLETED || t.paymentStatus !== TaskPaymentStatus.COMPLETED) return false;
       const taskDate = t.completedAt || t.createdAt;
+      if (!taskDate) return false;
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
       return taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;

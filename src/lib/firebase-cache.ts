@@ -205,7 +205,7 @@ class FirebaseCache {
 
   // Find the most recent timestamp from a snapshot
   private findMostRecentTimestamp(snapshot: QuerySnapshot): Timestamp {
-    let mostRecent = Timestamp.fromDate(new Date(0)); // Start with epoch
+    let mostRecent = Timestamp.fromDate(new Date('2020-01-01')); // Start with a reasonable date instead of epoch
     
     snapshot.docs.forEach(doc => {
       const data = doc.data();
@@ -215,7 +215,7 @@ class FirebaseCache {
       }
     });
     
-    return mostRecent.seconds === 0 ? Timestamp.now() : mostRecent;
+    return mostRecent.seconds < Timestamp.fromDate(new Date('2020-01-02')).seconds ? Timestamp.now() : mostRecent;
   }
 
   // Clear cache for a specific collection
