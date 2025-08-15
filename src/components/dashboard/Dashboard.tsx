@@ -49,7 +49,7 @@ export default function Dashboard() {
       
       // Sort manually to avoid index requirement
       const sortedTasks = userTasks.sort((a, b) => 
-        b.createdAt.getTime() - a.createdAt.getTime()
+        (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)
       );
       
       setTasks(sortedTasks);

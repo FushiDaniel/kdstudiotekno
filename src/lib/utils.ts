@@ -22,7 +22,10 @@ export function formatCurrency(amount: number): string {
   return `RM ${amount.toFixed(2)}`;
 }
 
-export function formatDate(date: Date): string {
+export function formatDate(date: Date | null | undefined): string {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Tarikh tidak tersedia';
+  }
   return new Intl.DateTimeFormat('ms-MY', {
     year: 'numeric',
     month: 'long',
@@ -30,14 +33,20 @@ export function formatDate(date: Date): string {
   }).format(date);
 }
 
-export function formatTime(date: Date): string {
+export function formatTime(date: Date | null | undefined): string {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Masa tidak tersedia';
+  }
   return new Intl.DateTimeFormat('ms-MY', {
     hour: '2-digit',
     minute: '2-digit'
   }).format(date);
 }
 
-export function formatDateTime(date: Date): string {
+export function formatDateTime(date: Date | null | undefined): string {
+  if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Tarikh dan masa tidak tersedia';
+  }
   return new Intl.DateTimeFormat('ms-MY', {
     year: 'numeric',
     month: 'short',

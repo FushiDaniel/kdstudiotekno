@@ -99,13 +99,24 @@ class FirebaseCache {
       : collection(db, collectionName);
 
     const snapshot = await getDocs(firestoreQuery);
-    const data = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      // Convert Firestore timestamps to Date objects
-      createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
-      updatedAt: doc.data().updatedAt?.toDate?.() || doc.data().updatedAt,
-    })) as T[];
+    const data = snapshot.docs.map(doc => {
+      const docData = doc.data();
+      const convertedData = { id: doc.id, ...docData };
+      
+      // Convert all potential date fields
+      const dateFields = [
+        'createdAt', 'updatedAt', 'deadline', 'assignedAt', 'startDate', 
+        'completedAt', 'submittedAt', 'reviewedAt', 'verifiedAt', 'clockInTime', 'clockOutTime'
+      ];
+      
+      dateFields.forEach(field => {
+        if (docData[field]?.toDate) {
+          convertedData[field] = docData[field].toDate();
+        }
+      });
+      
+      return convertedData;
+    }) as T[];
 
     // Find the most recent updatedAt timestamp
     const lastUpdated = this.findMostRecentTimestamp(snapshot);
@@ -163,12 +174,22 @@ class FirebaseCache {
       return null;
     }
 
-    const data = {
-      id: docSnap.id,
-      ...docSnap.data(),
-      createdAt: docSnap.data().createdAt?.toDate?.() || docSnap.data().createdAt,
-      updatedAt: docSnap.data().updatedAt?.toDate?.() || docSnap.data().updatedAt,
-    } as T;
+    const docData = docSnap.data();
+    const convertedData = { id: docSnap.id, ...docData };
+    
+    // Convert all potential date fields
+    const dateFields = [
+      'createdAt', 'updatedAt', 'deadline', 'assignedAt', 'startDate', 
+      'completedAt', 'submittedAt', 'reviewedAt', 'verifiedAt', 'clockInTime', 'clockOutTime'
+    ];
+    
+    dateFields.forEach(field => {
+      if (docData[field]?.toDate) {
+        convertedData[field] = docData[field].toDate();
+      }
+    });
+    
+    const data = convertedData as T;
 
     // Cache the document
     this.cache.set(cacheKey, {
@@ -286,12 +307,24 @@ class FirebaseCache {
       : collection(db, collectionName);
 
     return onSnapshot(firestoreQuery, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate?.() || doc.data().createdAt,
-        updatedAt: doc.data().updatedAt?.toDate?.() || doc.data().updatedAt,
-      })) as T[];
+      const data = snapshot.docs.map(doc => {
+        const docData = doc.data();
+        const convertedData = { id: doc.id, ...docData };
+        
+        // Convert all potential date fields
+        const dateFields = [
+          'createdAt', 'updatedAt', 'deadline', 'assignedAt', 'startDate', 
+          'completedAt', 'submittedAt', 'reviewedAt', 'verifiedAt', 'clockInTime', 'clockOutTime'
+        ];
+        
+        dateFields.forEach(field => {
+          if (docData[field]?.toDate) {
+            convertedData[field] = docData[field].toDate();
+          }
+        });
+        
+        return convertedData;
+      }) as T[];
 
       // Update cache
       const cacheKey = this.generateCacheKey(collectionName, queryParams);
