@@ -162,7 +162,7 @@ export default function ProfileView() {
                 <select
                   value={user?.availabilityStatus || AvailabilityStatus.TIDAK_AKTIF}
                   onChange={(e) => handleStatusChange(e.target.value as AvailabilityStatus)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(user?.availabilityStatus || AvailabilityStatus.TIDAK_AKTIF)}`}
+                  className={`w-full px-3 py-2 rounded-md text-sm font-medium border ${getStatusColor(user?.availabilityStatus || AvailabilityStatus.TIDAK_AKTIF)}`}
                 >
                   <option value={AvailabilityStatus.DALAM_TALIAN}>Dalam Talian</option>
                   <option value={AvailabilityStatus.WORKING}>Sedang Bekerja</option>
@@ -170,6 +170,28 @@ export default function ProfileView() {
                   <option value={AvailabilityStatus.TIDAK_AKTIF}>Tidak Aktif</option>
                 </select>
               </div>
+              
+              {/* Notification Settings */}
+              <Card className="mb-4">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-700">Notifikasi Tugasan Baru</p>
+                      <p className="text-xs text-gray-500">Terima notifikasi untuk tugasan baru sahaja</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      defaultChecked={true}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      onChange={(e) => {
+                        // This would normally update user preferences in Firebase
+                        // For now, just show the UI change
+                        console.log('Notification preference:', e.target.checked);
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
               
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex items-center justify-center">

@@ -43,75 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Auto status tracking when app is active
-  useEffect(() => {
-    if (!user) return;
-
-    let activityTimeout: NodeJS.Timeout;
-    
-    const updateStatusToOnline = async () => {
-      try {
-        await updateDoc(doc(db, 'users', user.uid), {
-          availabilityStatus: AvailabilityStatus.DALAM_TALIAN,
-          lastActivity: Timestamp.fromDate(new Date()),
-          updatedAt: Timestamp.fromDate(new Date())
-        });
-      } catch (error) {
-        console.error('Error updating status to online:', error);
-      }
-    };
-
-    const updateStatusToInactive = async () => {
-      try {
-        await updateDoc(doc(db, 'users', user.uid), {
-          availabilityStatus: AvailabilityStatus.TIDAK_AKTIF,
-          updatedAt: Timestamp.fromDate(new Date())
-        });
-      } catch (error) {
-        console.error('Error updating status to inactive:', error);
-      }
-    };
-
-    const handleActivity = () => {
-      clearTimeout(activityTimeout);
-      updateStatusToOnline();
-      
-      // Set user as inactive after 5 minutes of no activity
-      activityTimeout = setTimeout(updateStatusToInactive, 5 * 60 * 1000);
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        updateStatusToOnline();
-      } else {
-        updateStatusToInactive();
-      }
-    };
-
-    // Set initial online status
-    updateStatusToOnline();
-
-    // Listen for user activity
-    window.addEventListener('mousedown', handleActivity);
-    window.addEventListener('mousemove', handleActivity);
-    window.addEventListener('keypress', handleActivity);
-    window.addEventListener('scroll', handleActivity);
-    window.addEventListener('touchstart', handleActivity);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Set initial activity timeout
-    activityTimeout = setTimeout(updateStatusToInactive, 5 * 60 * 1000);
-
-    return () => {
-      clearTimeout(activityTimeout);
-      window.removeEventListener('mousedown', handleActivity);
-      window.removeEventListener('mousemove', handleActivity);
-      window.removeEventListener('keypress', handleActivity);
-      window.removeEventListener('scroll', handleActivity);
-      window.removeEventListener('touchstart', handleActivity);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user]);
+  // Remove automatic status tracking - users will manually update their status
 
   useEffect(() => {
     let mounted = true;

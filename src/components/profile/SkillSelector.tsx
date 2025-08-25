@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skill, UserSkill, User } from '@/types';
 import { collection, query, onSnapshot, doc, setDoc, deleteDoc, where, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Plus, X, Check, Settings, Award } from 'lucide-react';
+import { Plus, X, Check, Settings, Award, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SkillSelectorProps {
@@ -125,8 +125,17 @@ export default function SkillSelector({ user, onSkillsChange, isEditing, onToggl
           Kemahiran
         </CardTitle>
         {onToggleEdit && (
-          <Button variant="outline" size="sm" onClick={onToggleEdit}>
-            <Settings className="h-4 w-4 mr-2" />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onToggleEdit}
+            className={isEditing ? 'bg-black text-white hover:bg-gray-800' : ''}
+          >
+            {isEditing ? (
+              <CheckCircle className="h-4 w-4 mr-2" />
+            ) : (
+              <Settings className="h-4 w-4 mr-2" />
+            )}
             {isEditing ? 'Selesai' : 'Urus'}
           </Button>
         )}
