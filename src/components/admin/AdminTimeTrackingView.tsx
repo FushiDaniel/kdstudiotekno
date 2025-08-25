@@ -58,11 +58,11 @@ export default function AdminTimeTrackingView() {
               ...record,
               // Ensure dates are properly converted from Firestore timestamps
               clockInTime: record.clockInTime instanceof Date ? record.clockInTime : 
-                          record.clockInTime?.toDate ? record.clockInTime.toDate() : 
-                          new Date(record.clockInTime),
+                          (record.clockInTime as any)?.toDate ? (record.clockInTime as any).toDate() : 
+                          record.clockInTime ? new Date(record.clockInTime as any) : null,
               clockOutTime: record.clockOutTime instanceof Date ? record.clockOutTime : 
-                           record.clockOutTime?.toDate ? record.clockOutTime.toDate() : 
-                           record.clockOutTime ? new Date(record.clockOutTime) : null,
+                           (record.clockOutTime as any)?.toDate ? (record.clockOutTime as any).toDate() : 
+                           record.clockOutTime ? new Date(record.clockOutTime as any) : null,
               // Ensure totalMinutes is a number
               totalMinutes: record.totalMinutes ? Number(record.totalMinutes) : undefined
             }));
