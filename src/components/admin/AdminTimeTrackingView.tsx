@@ -122,7 +122,17 @@ export default function AdminTimeTrackingView() {
     
     const monthlyRecords = clockInRecords.filter(record => {
       if (!record.date || record.userId !== userId) return false;
-      const recordDate = new Date(record.date);
+      
+      // Handle both date string formats: "YYYY-MM-DD" and Date object
+      let recordDate;
+      if (typeof record.date === 'string') {
+        // Parse YYYY-MM-DD as local date, not UTC to avoid timezone issues
+        const [year, month, day] = record.date.split('-').map(Number);
+        recordDate = new Date(year, month - 1, day); // month is 0-indexed
+      } else {
+        recordDate = new Date(record.date);
+      }
+      
       return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
     });
 

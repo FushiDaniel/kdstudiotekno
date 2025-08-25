@@ -289,55 +289,67 @@ interface UserTaskCardProps {
 function UserTaskCard({ task, onTaskSelect, getStatusColor, getStatusBadge }: UserTaskCardProps) {
   return (
     <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="min-w-0 flex-1 mr-4">
-            <CardTitle className="text-lg text-gray-900 mb-1 break-words">{task.name}</CardTitle>
-            <p className="text-sm text-gray-500 font-mono break-all">ID: {task.id}</p>
+      <CardContent className="p-4 sm:p-6">
+        {/* Mobile-first responsive layout */}
+        <div className="space-y-4">
+          {/* Header section with title and badge */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base sm:text-lg text-gray-900 leading-tight break-words pr-2">{task.name}</CardTitle>
+              <p className="text-xs sm:text-sm text-gray-500 font-mono break-all mt-1">ID: {task.id}</p>
+              <div className="mt-2 sm:hidden">
+                <Badge className={`${getStatusColor(task.status)} text-xs`}>
+                  {getStatusBadge(task.status)}
+                </Badge>
+              </div>
+            </div>
+            <div className="hidden sm:block flex-shrink-0">
+              <Badge className={getStatusColor(task.status)}>
+                {getStatusBadge(task.status)}
+              </Badge>
+            </div>
           </div>
-          <Badge className={getStatusColor(task.status)}>
-            {getStatusBadge(task.status)}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 overflow-hidden">
-          <div className="text-gray-700 text-sm leading-relaxed font-sans max-h-24 overflow-y-auto break-words overflow-wrap-anywhere whitespace-pre-wrap max-w-full">
-            <div className="[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded [&_img]:shadow-sm [&_*]:max-w-full [&_*]:overflow-hidden">
+
+          {/* Description */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div className="text-gray-700 text-sm leading-relaxed break-words max-h-20 overflow-y-auto">
               {formatMessageWithLinks(task.description)}
             </div>
           </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="flex items-center text-sm font-medium text-gray-900">
-            <DollarSign className="h-4 w-4 mr-2 text-green-600" />
-            {formatCurrency(task.amount)}
-          </div>
-          <div className="flex items-center text-sm text-gray-700">
-            <Clock className="h-4 w-4 mr-2 text-orange-500" />
-            {formatDate(task.deadline)}
-          </div>
-        </div>
-        
-        {task.skills.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-4">
-            {task.skills.map((skill, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {skill}
-              </Badge>
-            ))}
-          </div>
-        )}
 
-        <Button 
-          variant="outline" 
-          className="w-full"
-          onClick={() => onTaskSelect(task)}
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          Lihat Detail
-        </Button>
+          {/* Task details - stack on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex items-start">
+              <DollarSign className="h-4 w-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-sm font-medium text-gray-900 break-words">{formatCurrency(task.amount)}</span>
+            </div>
+            <div className="flex items-start">
+              <Clock className="h-4 w-4 mr-2 text-orange-500 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700 break-words">{formatDate(task.deadline)}</span>
+            </div>
+          </div>
+          
+          {/* Skills */}
+          {task.skills.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {task.skills.map((skill, index) => (
+                <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Action button */}
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => onTaskSelect(task)}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            Lihat Detail
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -354,63 +366,75 @@ interface OpenTaskCardProps {
 function OpenTaskCard({ task, onTakeTask, onTaskSelect, getStatusColor, getStatusBadge }: OpenTaskCardProps) {
   return (
     <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-green-500">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="min-w-0 flex-1 mr-4">
-            <CardTitle className="text-lg text-gray-900 mb-1 break-words">{task.name}</CardTitle>
-            <p className="text-sm text-gray-500 font-mono break-all">ID: {task.id}</p>
+      <CardContent className="p-4 sm:p-6">
+        {/* Mobile-first responsive layout */}
+        <div className="space-y-4">
+          {/* Header section with title and badge */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-base sm:text-lg text-gray-900 leading-tight break-words pr-2">{task.name}</CardTitle>
+              <p className="text-xs sm:text-sm text-gray-500 font-mono break-all mt-1">ID: {task.id}</p>
+              <div className="mt-2 sm:hidden">
+                <Badge className={`${getStatusColor(task.status)} text-xs`}>
+                  {getStatusBadge(task.status)}
+                </Badge>
+              </div>
+            </div>
+            <div className="hidden sm:block flex-shrink-0">
+              <Badge className={getStatusColor(task.status)}>
+                {getStatusBadge(task.status)}
+              </Badge>
+            </div>
           </div>
-          <Badge className={getStatusColor(task.status)}>
-            {getStatusBadge(task.status)}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 overflow-hidden">
-          <div className="text-gray-700 text-sm leading-relaxed font-sans max-h-24 overflow-y-auto break-words overflow-wrap-anywhere whitespace-pre-wrap max-w-full">
-            <div className="[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded [&_img]:shadow-sm [&_*]:max-w-full [&_*]:overflow-hidden">
+
+          {/* Description */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div className="text-gray-700 text-sm leading-relaxed break-words max-h-20 overflow-y-auto">
               {formatMessageWithLinks(task.description)}
             </div>
           </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="flex items-center text-sm font-medium text-gray-900">
-            <DollarSign className="h-4 w-4 mr-2 text-green-600" />
-            {formatCurrency(task.amount)}
-          </div>
-          <div className="flex items-center text-sm text-gray-700">
-            <Clock className="h-4 w-4 mr-2 text-orange-500" />
-            {formatDate(task.deadline)}
-          </div>
-        </div>
-        
-        {task.skills.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-4">
-            {task.skills.map((skill, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {skill}
-              </Badge>
-            ))}
-          </div>
-        )}
 
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            className="flex-1"
-            onClick={() => onTaskSelect(task)}
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Lihat Detail
-          </Button>
-          <Button 
-            className="flex-1"
-            onClick={onTakeTask}
-          >
-            <CheckCircle className="h-4 w-4 mr-2" />
-            Ambil Tugasan
-          </Button>
+          {/* Task details - stack on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex items-start">
+              <DollarSign className="h-4 w-4 mr-2 text-green-600 flex-shrink-0 mt-0.5" />
+              <span className="text-sm font-medium text-gray-900 break-words">{formatCurrency(task.amount)}</span>
+            </div>
+            <div className="flex items-start">
+              <Clock className="h-4 w-4 mr-2 text-orange-500 flex-shrink-0 mt-0.5" />
+              <span className="text-sm text-gray-700 break-words">{formatDate(task.deadline)}</span>
+            </div>
+          </div>
+          
+          {/* Skills */}
+          {task.skills.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {task.skills.map((skill, index) => (
+                <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Action buttons - stack on mobile */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
+            <Button 
+              variant="outline" 
+              className="flex-1 w-full"
+              onClick={() => onTaskSelect(task)}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Lihat Detail
+            </Button>
+            <Button 
+              className="flex-1 w-full"
+              onClick={onTakeTask}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Ambil Tugasan
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
