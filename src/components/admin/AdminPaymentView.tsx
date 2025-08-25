@@ -145,21 +145,40 @@ export default function AdminPaymentView() {
   };
 
   const handleCreatePTPayment = async () => {
-    if (!user || !selectedPTUser || !ptPaymentAmount) {
+    if (!user || !selectedPTUser || !ptPaymentAmount || ptPaymentAmount.trim() === '') {
       alert('Sila isi semua maklumat yang diperlukan.');
       return;
     }
 
+    const amount = parseFloat(ptPaymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+      alert('Sila masukkan jumlah bayaran yang sah.');
+      return;
+    }
+
     const selectedUser = partTimeUsers.find(u => u.uid === selectedPTUser);
-    if (!selectedUser) return;
+    if (!selectedUser) {
+      alert('Pekerja Part Time yang dipilih tidak sah.');
+      return;
+    }
 
     setIsCreatingPTPayment(true);
     try {
+      console.log('Creating PT payment:', {
+        userId: selectedPTUser,
+        userFullName: selectedUser.fullname,
+        userStaffId: selectedUser.staffId,
+        amount: amount,
+        month: ptPaymentMonth,
+        year: ptPaymentYear,
+        description: ptPaymentDescription || `Bayaran Part Time ${new Date(ptPaymentYear, ptPaymentMonth).toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' })}`
+      });
+
       await addDoc(collection(db, 'partTimePayments'), {
         userId: selectedPTUser,
         userFullName: selectedUser.fullname,
         userStaffId: selectedUser.staffId,
-        amount: parseFloat(ptPaymentAmount),
+        amount: amount,
         month: ptPaymentMonth,
         year: ptPaymentYear,
         description: ptPaymentDescription || `Bayaran Part Time ${new Date(ptPaymentYear, ptPaymentMonth).toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' })}`,
@@ -168,6 +187,8 @@ export default function AdminPaymentView() {
         createdByName: user.fullname
       });
 
+      console.log('PT payment created successfully');
+
       // Reset form
       setSelectedPTUser('');
       setPtPaymentAmount('');
@@ -175,7 +196,7 @@ export default function AdminPaymentView() {
       alert('Bayaran Part Time berjaya ditambah!');
     } catch (error) {
       console.error('Error creating PT payment:', error);
-      alert('Gagal menambah bayaran Part Time. Sila cuba lagi.');
+      alert(`Gagal menambah bayaran Part Time: ${error.message || 'Sila cuba lagi.'}`);
     } finally {
       setIsCreatingPTPayment(false);
     }

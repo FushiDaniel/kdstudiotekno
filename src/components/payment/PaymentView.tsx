@@ -11,6 +11,20 @@ import { db } from '@/lib/firebase';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { DollarSign, Calendar, CheckCircle, Clock, FileText, Filter, ChevronDown } from 'lucide-react';
 
+interface PartTimePayment {
+  id: string;
+  userId: string;
+  userFullName: string;
+  userStaffId: string;
+  amount: number;
+  month: number;
+  year: number;
+  description: string;
+  createdAt: Date;
+  createdBy: string;
+  createdByName: string;
+}
+
 type FilterPeriod = 'current' | 'all' | 'custom';
 
 export default function PaymentView() {
@@ -22,6 +36,8 @@ export default function PaymentView() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<'freelance' | 'parttime'>('freelance');
+  const [ptPayments, setPtPayments] = useState<PartTimePayment[]>([]);
+  const [ptLoading, setPtLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -53,6 +69,38 @@ export default function PaymentView() {
     }, (error) => {
       console.error('Error fetching tasks:', error);
       setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Fetch Part Time payments for PT users
+  useEffect(() => {
+    if (!user?.staffId?.startsWith('PT')) return;
+
+    setPtLoading(true);
+    const q = query(
+      collection(db, 'partTimePayments'),
+      where('userId', '==', user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const payments = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt: doc.data().createdAt?.toDate() || new Date(),
+      })) as PartTimePayment[];
+      
+      // Sort by creation date (most recent first)
+      const sortedPayments = payments.sort((a, b) => 
+        b.createdAt.getTime() - a.createdAt.getTime()
+      );
+      
+      setPtPayments(sortedPayments);
+      setPtLoading(false);
+    }, (error) => {
+      console.error('Error fetching PT payments:', error);
+      setPtLoading(false);
     });
 
     return () => unsubscribe();
@@ -343,12 +391,24 @@ export default function PaymentView() {
             <CardTitle>Bayaran Part Time</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-12 text-gray-500">
-              <DollarSign className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium mb-2">Maklumat Bayaran Part Time</h3>
-              <p>Maklumat bayaran bulanan akan dipaparkan di sini.</p>
-              <p className="text-sm mt-2">Sila hubungi admin untuk maklumat lanjut.</p>
-            </div>
+            {ptLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black"></div>
+              </div>
+            ) : ptPayments.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <DollarSign className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium mb-2">Tiada Bayaran Part Time</h3>
+                <p>Belum ada bayaran Part Time yang direkodkan.</p>
+                <p className="text-sm mt-2">Sila hubungi admin untuk maklumat lanjut.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {ptPayments.map((payment) => (
+                  <PartTimePaymentCard key={payment.id} payment={payment} />
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -453,6 +513,54 @@ function PaymentTaskCard({ task }: PaymentTaskCardProps) {
             </span>
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface PartTimePaymentCardProps {
+  payment: PartTimePayment;
+}
+
+function PartTimePaymentCard({ payment }: PartTimePaymentCardProps) {
+  const getMonthName = (month: number) => {
+    return new Date(2024, month).toLocaleDateString('ms-MY', { month: 'long' });
+  };
+
+  return (
+    <Card className="border-l-4 border-l-green-500">
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="min-w-0 flex-1 mr-4">
+            <h3 className="font-semibold text-gray-900 mb-2">
+              Bayaran {getMonthName(payment.month)} {payment.year}
+            </h3>
+            <p className="text-sm text-gray-600 mb-2">{payment.description}</p>
+            <p className="text-sm text-gray-500 font-mono break-all">ID: {payment.id}</p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-green-600">{formatCurrency(payment.amount)}</div>
+            <Badge className="bg-green-100 text-green-800 mt-2">
+              Bayaran Selesai
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+          <div className="flex items-center">
+            <Calendar className="h-4 w-4 mr-2" />
+            <span>Direkod: {formatDate(payment.createdAt)}</span>
+          </div>
+          <div className="flex items-center">
+            <FileText className="h-4 w-4 mr-2" />
+            <span>Oleh: {payment.createdByName}</span>
+          </div>
+        </div>
+
+        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center">
+          <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+          <span className="text-sm text-green-800">Bayaran telah direkodkan dalam sistem</span>
+        </div>
       </CardContent>
     </Card>
   );

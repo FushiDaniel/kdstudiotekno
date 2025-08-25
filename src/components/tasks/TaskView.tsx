@@ -235,9 +235,11 @@ function UserTaskCard({ task, onTaskSelect, getStatusColor, getStatusBadge }: Us
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
-          <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed font-sans max-h-24 overflow-y-auto break-words overflow-wrap-anywhere">
-            {formatMessageWithLinks(task.description)}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 overflow-hidden">
+          <div className="text-gray-700 text-sm leading-relaxed font-sans max-h-24 overflow-y-auto break-words overflow-wrap-anywhere whitespace-pre-wrap max-w-full">
+            <div className="[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded [&_img]:shadow-sm [&_*]:max-w-full [&_*]:overflow-hidden">
+              {formatMessageWithLinks(task.description)}
+            </div>
           </div>
         </div>
         
@@ -298,9 +300,11 @@ function OpenTaskCard({ task, onTakeTask, onTaskSelect, getStatusColor, getStatu
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
-          <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed font-sans max-h-24 overflow-y-auto break-words overflow-wrap-anywhere">
-            {formatMessageWithLinks(task.description)}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4 overflow-hidden">
+          <div className="text-gray-700 text-sm leading-relaxed font-sans max-h-24 overflow-y-auto break-words overflow-wrap-anywhere whitespace-pre-wrap max-w-full">
+            <div className="[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded [&_img]:shadow-sm [&_*]:max-w-full [&_*]:overflow-hidden">
+              {formatMessageWithLinks(task.description)}
+            </div>
           </div>
         </div>
         
