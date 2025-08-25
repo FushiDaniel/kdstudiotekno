@@ -38,8 +38,11 @@ export default function ProfileView() {
   const handleStatusChange = async (newStatus: AvailabilityStatus) => {
     try {
       await updateUser({ availabilityStatus: newStatus });
+      // Force page refresh to ensure state is updated properly
+      window.location.reload();
     } catch (error) {
       console.error('Error updating status:', error);
+      alert('Gagal mengemas kini status. Sila cuba lagi.');
     }
   };
 
