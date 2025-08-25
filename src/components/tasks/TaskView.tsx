@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Task, TaskStatus } from '@/types';
-import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { firebaseCache } from '@/lib/firebase-cache';
 import { formatCurrency, formatDate, formatMessageWithLinks } from '@/lib/utils';
@@ -104,6 +104,43 @@ export default function TaskView() {
     if (user.staffId?.startsWith('PT')) {
       alert('Pekerja Part Time tidak dibenarkan mengambil tugasan sendiri. Sila hubungi admin untuk tugasan ditugaskan kepada anda.');
       return;
+    }
+
+    // Find the task to check required skills
+    const task = openTasks.find(t => t.id === taskId);
+    if (!task) {
+      alert('Tugasan tidak dijumpai.');
+      return;
+    }
+
+    // If task has required skills, check if user has verified skills
+    if (task.skills && task.skills.length > 0) {
+      try {
+        // Get user's verified skills
+        const userSkillsQuery = query(
+          collection(db, 'userSkills'),
+          where('userId', '==', user.uid),
+          where('verified', '==', true)
+        );
+        const userSkillsSnapshot = await getDocs(userSkillsQuery);
+        const verifiedSkillNames = userSkillsSnapshot.docs.map(doc => doc.data().skillName);
+
+        // Check if user has all required skills verified
+        const missingSkills = task.skills.filter(requiredSkill => 
+          !verifiedSkillNames.includes(requiredSkill)
+        );
+
+        if (missingSkills.length > 0) {
+          // Show popup for unverified users
+          const missingSkillsList = missingSkills.join(', ');
+          alert(`Anda tidak mempunyai kemahiran yang disahkan untuk tugasan ini.\n\nKemahiran yang diperlukan: ${missingSkillsList}\n\nSila hubungi admin untuk mengesahkan kemahiran anda terlebih dahulu.`);
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking user skills:', error);
+        alert('Ralat semasa memeriksa kemahiran. Sila cuba lagi.');
+        return;
+      }
     }
 
     try {

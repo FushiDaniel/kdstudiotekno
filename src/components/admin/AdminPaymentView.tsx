@@ -751,29 +751,6 @@ function PaymentTaskCard({ task, users, onApprove, onDeny, isProcessing, getPaym
               )}
             </div>
             
-            {task.paymentStatus === TaskPaymentStatus.PENDING && (
-              <div className="flex space-x-2">
-                <Button
-                  onClick={onApprove}
-                  disabled={isProcessing}
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700 text-white"
-                >
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  {isProcessing ? 'Memproses...' : 'Luluskan'}
-                </Button>
-                <Button
-                  onClick={onDeny}
-                  disabled={isProcessing}
-                  size="sm"
-                  variant="destructive"
-                >
-                  <XCircle className="h-4 w-4 mr-1" />
-                  {isProcessing ? 'Memproses...' : 'Tolak'}
-                </Button>
-              </div>
-            )}
-            
             {task.paymentStatus === TaskPaymentStatus.COMPLETED && (
               <div className="text-sm text-green-600 font-medium">
                 ✓ Bayaran telah diluluskan
@@ -797,6 +774,30 @@ function PaymentTaskCard({ task, users, onApprove, onDeny, isProcessing, getPaym
                 <p className="text-sm text-gray-600">{task.adminFeedback}</p>
               </div>
             </div>
+          </div>
+        )}
+
+        {task.paymentStatus === TaskPaymentStatus.PENDING && (
+          <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-center">
+            <Button
+              onClick={onApprove}
+              disabled={isProcessing}
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto"
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              {isProcessing ? 'Memproses...' : 'Luluskan'}
+            </Button>
+            <Button
+              onClick={onDeny}
+              disabled={isProcessing}
+              size="sm"
+              variant="destructive"
+              className="w-full sm:w-auto"
+            >
+              <XCircle className="h-4 w-4 mr-1" />
+              {isProcessing ? 'Memproses...' : 'Tolak'}
+            </Button>
           </div>
         )}
       </CardContent>

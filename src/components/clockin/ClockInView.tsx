@@ -44,6 +44,7 @@ export default function ClockInView() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       try {
+        console.log('Clock in records snapshot received:', snapshot.docs.length, 'records');
         const records = snapshot.docs.map(doc => {
           const data = doc.data();
           let location = 'Web App';
@@ -69,8 +70,10 @@ export default function ClockInView() {
           (b.clockInTime?.getTime() || 0) - (a.clockInTime?.getTime() || 0)
         );
         
+        console.log('Processed clock in records:', sortedRecords.length);
         setClockInRecords(sortedRecords);
         const active = sortedRecords.find(record => !record.clockOutTime);
+        console.log('Active session:', active ? active.id : 'None');
         setActiveSession(active || null);
       } catch (error) {
         console.error('Error processing clock in records:', error);
@@ -167,10 +170,24 @@ export default function ClockInView() {
         userStaffId: user.staffId
       };
 
+      console.log('Attempting to create clock in record:', newRecord);
       await addDoc(collection(db, 'clockInRecords'), newRecord);
-    } catch (error) {
+      console.log('Clock in successful');
+    } catch (error: any) {
       console.error('Error clocking in:', error);
-      alert(error instanceof Error ? error.message : 'Failed to clock in');
+      let errorMessage = 'Gagal untuk daftar masuk. ';
+      
+      if (error?.code === 'permission-denied') {
+        errorMessage += 'Anda tidak mempunyai kebenaran untuk daftar masuk. Sila hubungi admin.';
+      } else if (error?.code === 'unavailable') {
+        errorMessage += 'Perkhidmatan tidak tersedia pada masa ini. Sila cuba lagi.';
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else {
+        errorMessage += 'Sila cuba lagi.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -197,13 +214,27 @@ export default function ClockInView() {
         alert(`Sesi melebihi had masa 2 jam 30 minit. Masa yang direkodkan: ${formatDuration(actualMinutes)}`);
       }
 
+      console.log('Attempting to clock out:', activeSession.id, 'with', actualMinutes, 'minutes');
       await updateDoc(doc(db, 'clockInRecords', activeSession.id), {
         clockOutTime: Timestamp.fromDate(now),
         totalMinutes: actualMinutes,
       });
-    } catch (error) {
+      console.log('Clock out successful');
+    } catch (error: any) {
       console.error('Error clocking out:', error);
-      alert(error instanceof Error ? error.message : 'Failed to clock out');
+      let errorMessage = 'Gagal untuk daftar keluar. ';
+      
+      if (error?.code === 'permission-denied') {
+        errorMessage += 'Anda tidak mempunyai kebenaran untuk daftar keluar. Sila hubungi admin.';
+      } else if (error?.code === 'unavailable') {
+        errorMessage += 'Perkhidmatan tidak tersedia pada masa ini. Sila cuba lagi.';
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else {
+        errorMessage += 'Sila cuba lagi.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
