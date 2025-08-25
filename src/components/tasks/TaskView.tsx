@@ -100,6 +100,12 @@ export default function TaskView() {
   const handleTakeTask = async (taskId: string) => {
     if (!user) return;
 
+    // Check if user is Part Time - they cannot assign tasks to themselves
+    if (user.staffId?.startsWith('PT')) {
+      alert('Pekerja Part Time tidak dibenarkan mengambil tugasan sendiri. Sila hubungi admin untuk tugasan ditugaskan kepada anda.');
+      return;
+    }
+
     try {
       await updateDoc(doc(db, 'tasks', taskId), {
         assignedTo: user.uid,

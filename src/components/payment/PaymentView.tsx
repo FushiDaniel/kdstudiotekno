@@ -21,6 +21,7 @@ export default function PaymentView() {
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState<'freelance' | 'parttime'>('freelance');
 
   useEffect(() => {
     if (!user) return;
@@ -222,6 +223,34 @@ export default function PaymentView() {
             </CardContent>
           </Card>
         )}
+
+        {/* Tab Navigation for PT users */}
+        {user?.staffId?.startsWith('PT') && (
+          <div className="mb-6">
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setActiveTab('freelance')}
+                className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 ${
+                  activeTab === 'freelance'
+                    ? 'bg-gray-800 text-white shadow-md'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                Freelance Payment
+              </button>
+              <button
+                onClick={() => setActiveTab('parttime')}
+                className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 ${
+                  activeTab === 'parttime'
+                    ? 'bg-gray-800 text-white shadow-md'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                Part Time Gaji
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}
@@ -279,29 +308,48 @@ export default function PaymentView() {
       </div>
 
       {/* Payment History */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sejarah Tugasan & Bayaran</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[...filteredCompleted, ...filteredPending].length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                {filterPeriod === 'current' ? 'Tiada tugasan bulan ini' :
-                 filterPeriod === 'custom' ? `Tiada tugasan untuk ${monthOptions.find(m => m.value === selectedMonth && m.year === selectedYear)?.label}` :
-                 'Tiada sejarah tugasan yang boleh dibayar'}
-              </div>
-            ) : (
-              [...filteredCompleted, ...filteredPending]
-                .sort((a, b) => (b.completedAt || b.submittedAt || b.createdAt).getTime() - 
-                               (a.completedAt || a.submittedAt || a.createdAt).getTime())
-                .map((task) => (
-                  <PaymentTaskCard key={task.id} task={task} />
-                ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {(!user?.staffId?.startsWith('PT') || activeTab === 'freelance') && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Sejarah Tugasan & Bayaran</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[...filteredCompleted, ...filteredPending].length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  {filterPeriod === 'current' ? 'Tiada tugasan bulan ini' :
+                   filterPeriod === 'custom' ? `Tiada tugasan untuk ${monthOptions.find(m => m.value === selectedMonth && m.year === selectedYear)?.label}` :
+                   'Tiada sejarah tugasan yang boleh dibayar'}
+                </div>
+              ) : (
+                [...filteredCompleted, ...filteredPending]
+                  .sort((a, b) => (b.completedAt || b.submittedAt || b.createdAt).getTime() - 
+                                 (a.completedAt || a.submittedAt || a.createdAt).getTime())
+                  .map((task) => (
+                    <PaymentTaskCard key={task.id} task={task} />
+                  ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Part Time Salary Section */}
+      {user?.staffId?.startsWith('PT') && activeTab === 'parttime' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Part Time Gaji</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12 text-gray-500">
+              <DollarSign className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium mb-2">Maklumat Gaji Part Time</h3>
+              <p>Maklumat gaji bulanan akan dipaparkan di sini.</p>
+              <p className="text-sm mt-2">Sila hubungi admin untuk maklumat lanjut.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

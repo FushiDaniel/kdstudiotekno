@@ -66,6 +66,12 @@ export default function AdminPaymentView() {
     const task = tasks.find(t => t.id === taskId);
     if (!task || !user) return;
 
+    // Check if user is Part Time - they cannot approve payments for others
+    if (user.staffId?.startsWith('PT') && action === 'approve') {
+      alert('Pekerja Part Time tidak dibenarkan meluluskan bayaran untuk orang lain.');
+      return;
+    }
+
     setProcessingPayments(prev => new Set(prev).add(taskId));
 
     try {

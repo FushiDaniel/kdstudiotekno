@@ -230,15 +230,23 @@ export default function DirectoryView() {
     return userSkills.filter(skill => skill.userId === userId);
   };
 
-  const filteredUsers = getCurrentUsers().filter(user => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      user.fullname?.toLowerCase().includes(searchLower) ||
-      user.email?.toLowerCase().includes(searchLower) ||
-      user.staffId?.toLowerCase().includes(searchLower) ||
-      user.skills?.some(skill => skill.toLowerCase().includes(searchLower))
-    );
-  });
+  const filteredUsers = getCurrentUsers()
+    .filter(user => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        user.fullname?.toLowerCase().includes(searchLower) ||
+        user.email?.toLowerCase().includes(searchLower) ||
+        user.staffId?.toLowerCase().includes(searchLower) ||
+        user.skills?.some(skill => skill.toLowerCase().includes(searchLower))
+      );
+    })
+    .sort((a, b) => {
+      // Admin users first
+      if (a.isAdmin && !b.isAdmin) return -1;
+      if (!a.isAdmin && b.isAdmin) return 1;
+      // Then sort by date added (createdAt)
+      return (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0);
+    });
 
   if (loading) {
     return (
@@ -655,11 +663,9 @@ function UserCard({ user, userSkills, onClick, showDetails }: UserCardProps) {
           
           {/* Status Badge */}
           <div className="flex-shrink-0">
-            <div className={`w-3 h-3 rounded-full ${
-              user.availabilityStatus === 'dalam_talian' ? 'bg-green-500' :
-              user.availabilityStatus === 'tidak_aktif' ? 'bg-gray-400' :
-              'bg-gray-400'
-            }`}></div>
+            <Badge className={getStatusColor(user.availabilityStatus)} variant="secondary">
+              {getStatusText(user.availabilityStatus)}
+            </Badge>
           </div>
         </div>
 
