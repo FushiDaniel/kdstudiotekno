@@ -184,58 +184,57 @@ export default function TabNavigation() {
         <div className={`fixed left-0 top-0 h-full w-64 bg-white shadow-xl transform transition-all duration-300 ease-in-out ${
           showMobileMenu ? 'translate-x-0' : '-translate-x-full'
         }`}>
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 relative">
-                    <Image
-                      src="/kdlogo.jpeg"
-                      alt="KDStudio Logo"
-                      width={32}
-                      height={32}
-                      className="rounded-lg object-cover"
-                      priority
-                    />
-                  </div>
-                  <h2 className="text-lg font-semibold">KDstudio</h2>
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 relative">
+                  <Image
+                    src="/kdlogo.jpeg"
+                    alt="KDStudio Logo"
+                    width={32}
+                    height={32}
+                    className="rounded-lg object-cover"
+                    priority
+                  />
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
+                <h2 className="text-lg font-semibold">KDstudio</h2>
               </div>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setShowMobileMenu(false)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
             </div>
-            
-            <div className="p-4 space-y-2">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      setShowMobileMenu(false);
-                    }}
-                    className={`w-full px-4 py-3 flex items-center space-x-3 text-left rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 relative ${
-                      isActive 
-                        ? 'bg-black text-white shadow-lg' 
-                        : 'text-gray-900 hover:bg-gray-100 hover:shadow-md'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span className="font-medium">{tab.label}</span>
-                    {tab.badge && (
-                      <span className="ml-auto w-2 h-2 bg-red-500 rounded-full"></span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+          </div>
+          
+          <div className="p-4 space-y-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setShowMobileMenu(false);
+                  }}
+                  className={`w-full px-4 py-3 flex items-center space-x-3 text-left rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 relative ${
+                    isActive 
+                      ? 'bg-black text-white shadow-lg' 
+                      : 'text-gray-900 hover:bg-gray-100 hover:shadow-md'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="font-medium">{tab.label}</span>
+                  {tab.badge && (
+                    <span className="ml-auto w-2 h-2 bg-red-500 rounded-full"></span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
