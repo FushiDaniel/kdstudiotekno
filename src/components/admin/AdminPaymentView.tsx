@@ -665,104 +665,122 @@ function PaymentTaskCard({ task, users, onApprove, onDeny, isProcessing, getPaym
   
   return (
     <Card className="border-l-4 border-l-blue-500">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="font-semibold text-gray-900 break-words flex-1">{task.name}</h3>
+      <CardContent className="p-4 sm:p-6">
+        {/* Mobile-first responsive layout */}
+        <div className="space-y-4">
+          {/* Header section with title and badge */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 text-base sm:text-lg leading-tight break-words pr-2">{task.name}</h3>
+              <div className="mt-2 sm:hidden">
+                <Badge className={`${paymentBadge.color} text-xs`}>
+                  {paymentBadge.label}
+                </Badge>
+              </div>
+            </div>
+            <div className="hidden sm:block flex-shrink-0">
               <Badge className={paymentBadge.color}>
                 {paymentBadge.label}
               </Badge>
             </div>
-            <p className="text-sm text-gray-600 mb-3 break-words overflow-wrap-anywhere">{task.description}</p>
-            <div className="mb-3">
-              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded break-all">
-                ID Tugasan: {task.id}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-              <div className="flex items-center min-w-0">
-                <Users className="h-4 w-4 mr-2 flex-shrink-0" />
-                <span className="truncate">{task.assignedToName} ({task.assignedToStaffId})</span>
-              </div>
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2" />
-                <span>Selesai: {formatDate(task.completedAt || task.reviewedAt || task.createdAt)}</span>
-              </div>
-            </div>
-            
-            {/* User Bank Details for Admin */}
-            {assignedUser && (assignedUser.bankName || assignedUser.bankAccountNumber) && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start">
-                  <CreditCard className="h-4 w-4 text-blue-600 mr-2 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-blue-900 mb-2">Maklumat Bank Pengguna:</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="text-blue-700 font-medium">Nama: </span>
-                        <span className="text-blue-800">{assignedUser.fullname}</span>
-                      </div>
-                      {assignedUser.bankName && (
-                        <div>
-                          <span className="text-blue-700 font-medium">Bank: </span>
-                          <span className="text-blue-800">{assignedUser.bankName}</span>
-                        </div>
-                      )}
-                      {assignedUser.bankAccountNumber && (
-                        <div className="sm:col-span-2">
-                          <span className="text-blue-700 font-medium">No. Akaun: </span>
-                          <span className="text-blue-800 font-mono">{assignedUser.bankAccountNumber}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {assignedUser && !assignedUser.bankName && !assignedUser.bankAccountNumber && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <div className="flex items-start">
-                  <CreditCard className="h-4 w-4 text-yellow-600 mr-2 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-yellow-800">Amaran:</p>
-                    <p className="text-sm text-yellow-700">Pengguna belum mengisi maklumat bank. Sila minta pengguna kemaskini profil mereka.</p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
+
+          {/* Description */}
+          <p className="text-sm text-gray-600 break-words leading-relaxed">{task.description}</p>
           
-          <div className="text-right ml-6">
-            <div className="text-2xl font-bold text-gray-900 mb-2">
-              {formatCurrency(task.amount)}
-              {task.originalAmount && task.originalAmount !== task.amount && (
-                <div className="text-sm font-normal">
-                  Asal: <span className="line-through">{formatCurrency(task.originalAmount)}</span>
-                  <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                    task.amount > task.originalAmount 
-                      ? 'bg-blue-100 text-blue-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {task.amount > task.originalAmount ? 'Bonus Tambahan' : 'Potongan Dibuat'}
-                  </span>
+          {/* Task ID */}
+          <div className="mb-3">
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded break-all">
+              ID Tugasan: {task.id}
+            </span>
+          </div>
+
+          {/* Task details - stack on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
+            <div className="flex items-start min-w-0">
+              <Users className="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" />
+              <span className="break-words">{task.assignedToName} ({task.assignedToStaffId})</span>
+            </div>
+            <div className="flex items-start">
+              <Calendar className="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" />
+              <span className="break-words">Selesai: {formatDate(task.completedAt || task.reviewedAt || task.createdAt)}</span>
+            </div>
+          </div>
+
+          {/* Amount section - separate for better mobile display */}
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <div className="text-right sm:text-center">
+              <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
+                {formatCurrency(task.amount)}
+                {task.originalAmount && task.originalAmount !== task.amount && (
+                  <div className="text-sm font-normal mt-1">
+                    Asal: <span className="line-through">{formatCurrency(task.originalAmount)}</span>
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                      task.amount > task.originalAmount 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {task.amount > task.originalAmount ? 'Bonus Tambahan' : 'Potongan Dibuat'}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              {task.paymentStatus === TaskPaymentStatus.COMPLETED && (
+                <div className="text-sm text-green-600 font-medium">
+                  ✓ Bayaran telah diluluskan
+                </div>
+              )}
+              
+              {task.paymentStatus === TaskPaymentStatus.DENIED && (
+                <div className="text-sm text-red-600 font-medium">
+                  ✗ Bayaran ditolak
                 </div>
               )}
             </div>
-            
-            {task.paymentStatus === TaskPaymentStatus.COMPLETED && (
-              <div className="text-sm text-green-600 font-medium">
-                ✓ Bayaran telah diluluskan
-              </div>
-            )}
-            
-            {task.paymentStatus === TaskPaymentStatus.DENIED && (
-              <div className="text-sm text-red-600 font-medium">
-                ✗ Bayaran ditolak
-              </div>
-            )}
           </div>
+            
+          {/* User Bank Details for Admin */}
+          {assignedUser && (assignedUser.bankName || assignedUser.bankAccountNumber) && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start">
+                <CreditCard className="h-4 w-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-blue-900 mb-2">Maklumat Bank Pengguna:</p>
+                  <div className="space-y-2 text-sm">
+                    <div className="break-words">
+                      <span className="text-blue-700 font-medium">Nama: </span>
+                      <span className="text-blue-800">{assignedUser.fullname}</span>
+                    </div>
+                    {assignedUser.bankName && (
+                      <div className="break-words">
+                        <span className="text-blue-700 font-medium">Bank: </span>
+                        <span className="text-blue-800">{assignedUser.bankName}</span>
+                      </div>
+                    )}
+                    {assignedUser.bankAccountNumber && (
+                      <div className="break-words">
+                        <span className="text-blue-700 font-medium">No. Akaun: </span>
+                        <span className="text-blue-800 font-mono">{assignedUser.bankAccountNumber}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {assignedUser && !assignedUser.bankName && !assignedUser.bankAccountNumber && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start">
+                <CreditCard className="h-4 w-4 text-yellow-600 mr-2 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-yellow-800">Amaran:</p>
+                  <p className="text-sm text-yellow-700 break-words">Pengguna belum mengisi maklumat bank. Sila minta pengguna kemaskini profil mereka.</p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {task.adminFeedback && (

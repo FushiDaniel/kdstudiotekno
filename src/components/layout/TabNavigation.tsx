@@ -106,10 +106,16 @@ export default function TabNavigation() {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="md:hidden"
+                className="md:hidden transition-all duration-200 ease-in-out hover:scale-110 hover:bg-gray-100"
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
               >
-                {showMobileMenu ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                <div className="relative">
+                  {showMobileMenu ? (
+                    <X className="h-5 w-5 transition-transform duration-200 ease-in-out rotate-90" />
+                  ) : (
+                    <Menu className="h-5 w-5 transition-transform duration-200 ease-in-out" />
+                  )}
+                </div>
               </Button>
               
               <div className="w-8 h-8 relative">
@@ -130,12 +136,14 @@ export default function TabNavigation() {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="relative"
+                  className="relative transition-all duration-200 ease-in-out hover:scale-110 hover:bg-gray-100"
                   onClick={() => setShowNotifications(!showNotifications)}
                 >
-                  <Bell className="h-5 w-5" />
+                  <Bell className={`h-5 w-5 transition-transform duration-200 ease-in-out ${
+                    showNotifications ? 'rotate-12' : ''
+                  }`} />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center animate-pulse">
                       {unreadCount}
                     </span>
                   )}
@@ -146,29 +154,36 @@ export default function TabNavigation() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content with Fade Animation */}
       <div className="flex-1 pt-16 md:pl-64 relative">
-        {renderContent()}
+        <div className="animate-in fade-in duration-300 ease-in-out">
+          {renderContent()}
+        </div>
         
-        {/* Notification Overlay */}
+        {/* Notification Overlay with Slide Animation */}
         {showNotifications && (
-          <div className="absolute top-4 right-4 z-50">
+          <div className="absolute top-4 right-4 z-50 animate-in slide-in-from-top-2 fade-in duration-300 ease-out">
             <NotificationView onClose={() => setShowNotifications(false)} />
           </div>
         )}
       </div>
 
-      {/* Mobile Slide-out Menu */}
-      {showMobileMenu && (
-        <div className="md:hidden fixed inset-0 z-50">
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50" 
-            onClick={() => setShowMobileMenu(false)}
-          ></div>
-          
-          {/* Menu Panel */}
-          <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out">
+      {/* Mobile Slide-out Menu with Enhanced Animations */}
+      <div className={`md:hidden fixed inset-0 z-50 transition-opacity duration-300 ease-in-out ${
+        showMobileMenu ? 'opacity-100 visible' : 'opacity-0 invisible'
+      }`}>
+        {/* Backdrop with Fade Animation */}
+        <div 
+          className={`fixed inset-0 bg-black transition-opacity duration-300 ease-in-out ${
+            showMobileMenu ? 'bg-opacity-50' : 'bg-opacity-0'
+          }`}
+          onClick={() => setShowMobileMenu(false)}
+        ></div>
+        
+        {/* Menu Panel with Slide Animation */}
+        <div className={`fixed left-0 top-0 h-full w-64 bg-white shadow-xl transform transition-all duration-300 ease-in-out ${
+          showMobileMenu ? 'translate-x-0' : '-translate-x-full'
+        }`}>
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -206,10 +221,10 @@ export default function TabNavigation() {
                       setActiveTab(tab.id);
                       setShowMobileMenu(false);
                     }}
-                    className={`w-full px-4 py-3 flex items-center space-x-3 text-left rounded-lg transition-colors relative ${
+                    className={`w-full px-4 py-3 flex items-center space-x-3 text-left rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 relative ${
                       isActive 
-                        ? 'bg-black text-white' 
-                        : 'text-gray-900 hover:bg-gray-100'
+                        ? 'bg-black text-white shadow-lg' 
+                        : 'text-gray-900 hover:bg-gray-100 hover:shadow-md'
                     }`}
                   >
                     <Icon className="h-5 w-5" />
@@ -223,7 +238,7 @@ export default function TabNavigation() {
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Side Tab Navigation - Desktop */}
       <div className="hidden md:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white border-r border-gray-200 overflow-y-auto">
@@ -236,9 +251,9 @@ export default function TabNavigation() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full px-4 py-3 flex items-center space-x-3 text-left rounded-lg transition-colors relative ${
+                className={`w-full px-4 py-3 flex items-center space-x-3 text-left rounded-lg transition-all duration-200 ease-in-out transform hover:translate-x-1 hover:shadow-md relative ${
                   isActive 
-                    ? 'bg-black text-white' 
+                    ? 'bg-black text-white shadow-lg scale-105' 
                     : 'text-gray-900 hover:bg-gray-100'
                 }`}
               >

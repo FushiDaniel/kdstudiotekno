@@ -12,6 +12,7 @@ import { firebaseCache } from '@/lib/firebase-cache';
 import { formatCurrency, formatDate, formatMessageWithLinks } from '@/lib/utils';
 import { Clock, DollarSign, FileText, CheckCircle } from 'lucide-react';
 import TaskDetailView from './TaskDetailView';
+import Swal from 'sweetalert2';
 
 export default function TaskView() {
   const { user } = useAuth();
@@ -102,14 +103,24 @@ export default function TaskView() {
 
     // Check if user is Part Time - they cannot assign tasks to themselves
     if (user.staffId?.startsWith('PT')) {
-      alert('Pekerja Part Time tidak dibenarkan mengambil tugasan sendiri. Sila hubungi admin untuk tugasan ditugaskan kepada anda.');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Tidak Dibenarkan',
+        text: 'Pekerja Part Time tidak dibenarkan mengambil tugasan sendiri. Sila hubungi admin untuk tugasan ditugaskan kepada anda.',
+        confirmButtonColor: '#374151'
+      });
       return;
     }
 
     // Find the task to check required skills
     const task = openTasks.find(t => t.id === taskId);
     if (!task) {
-      alert('Tugasan tidak dijumpai.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Tugasan Tidak Dijumpai',
+        text: 'Tugasan yang dipilih tidak dijumpai. Sila cuba lagi.',
+        confirmButtonColor: '#374151'
+      });
       return;
     }
 
@@ -133,12 +144,30 @@ export default function TaskView() {
         if (missingSkills.length > 0) {
           // Show popup for unverified users
           const missingSkillsList = missingSkills.join(', ');
-          alert(`Anda tidak mempunyai kemahiran yang disahkan untuk tugasan ini.\n\nKemahiran yang diperlukan: ${missingSkillsList}\n\nSila hubungi admin untuk mengesahkan kemahiran anda terlebih dahulu.`);
+          Swal.fire({
+            icon: 'warning',
+            title: 'Kemahiran Belum Disahkan',
+            html: `
+              <p class="mb-3">Anda tidak mempunyai kemahiran yang disahkan untuk tugasan ini.</p>
+              <div class="bg-gray-100 p-3 rounded-lg mb-3">
+                <p class="font-semibold text-gray-700 mb-1">Kemahiran yang diperlukan:</p>
+                <p class="text-gray-600">${missingSkillsList}</p>
+              </div>
+              <p class="text-sm text-gray-600">Sila hubungi admin untuk mengesahkan kemahiran anda terlebih dahulu.</p>
+            `,
+            confirmButtonColor: '#f59e0b',
+            confirmButtonText: 'Faham'
+          });
           return;
         }
       } catch (error) {
         console.error('Error checking user skills:', error);
-        alert('Ralat semasa memeriksa kemahiran. Sila cuba lagi.');
+        Swal.fire({
+          icon: 'error',
+          title: 'Ralat Berlaku',
+          text: 'Ralat semasa memeriksa kemahiran. Sila cuba lagi.',
+          confirmButtonColor: '#374151'
+        });
         return;
       }
     }
