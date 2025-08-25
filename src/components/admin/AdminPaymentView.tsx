@@ -24,6 +24,7 @@ export default function AdminPaymentView() {
   const [selectedUser, setSelectedUser] = useState<string>('all');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<TaskPaymentStatus | 'all'>('all');
   const [processingPayments, setProcessingPayments] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<'tasks' | 'parttime'>('tasks');
 
   // Fetch tasks with completed status for payment processing using cache
   useEffect(() => {
@@ -178,11 +179,40 @@ export default function AdminPaymentView() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin - Urus Bayaran</h1>
-        <p className="text-gray-600">Kelola bayaran tugasan yang telah disiapkan</p>
+        <p className="text-gray-600">Kelola bayaran tugasan dan Part Time</p>
+        
+        {/* Tab Navigation */}
+        <div className="mt-6">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setActiveTab('tasks')}
+              className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 ${
+                activeTab === 'tasks'
+                  ? 'bg-gray-800 text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              Bayaran Tugasan
+            </button>
+            <button
+              onClick={() => setActiveTab('parttime')}
+              className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 ${
+                activeTab === 'parttime'
+                  ? 'bg-gray-800 text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              Bayaran Part Time
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      {/* Task Payment Content */}
+      {activeTab === 'tasks' && (
+        <>
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -304,6 +334,28 @@ export default function AdminPaymentView() {
           ))
         )}
       </div>
+        </>
+      )}
+
+      {/* Part Time Payment Content */}
+      {activeTab === 'parttime' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Urus Bayaran Part Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12 text-gray-500">
+              <CreditCard className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium mb-2">Sistem Bayaran Part Time</h3>
+              <p>Sistem untuk mengurus bayaran Part Time akan dibangunkan di sini.</p>
+              <p className="text-sm mt-2">Admin boleh menambah dan mengurus bayaran untuk pekerja Part Time.</p>
+              <Button className="mt-4" variant="outline" disabled>
+                Akan Datang
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

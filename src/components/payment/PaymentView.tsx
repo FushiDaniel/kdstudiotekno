@@ -224,20 +224,20 @@ export default function PaymentView() {
           </Card>
         )}
 
-        {/* Tab Navigation for PT users */}
-        {user?.staffId?.startsWith('PT') && (
-          <div className="mb-6">
-            <div className="flex space-x-2">
-              <button
-                onClick={() => setActiveTab('freelance')}
-                className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 ${
-                  activeTab === 'freelance'
-                    ? 'bg-gray-800 text-white shadow-md'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                Freelance Payment
-              </button>
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setActiveTab('freelance')}
+              className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 ${
+                activeTab === 'freelance'
+                  ? 'bg-gray-800 text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              Tugasan / Freelance
+            </button>
+            {user?.staffId?.startsWith('PT') && (
               <button
                 onClick={() => setActiveTab('parttime')}
                 className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 ${
@@ -246,11 +246,11 @@ export default function PaymentView() {
                     : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                 }`}
               >
-                Part Time Gaji
+                Bayaran Part Time
               </button>
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -307,8 +307,8 @@ export default function PaymentView() {
         </Card>
       </div>
 
-      {/* Payment History */}
-      {(!user?.staffId?.startsWith('PT') || activeTab === 'freelance') && (
+      {/* Payment History - Show for all users in freelance tab, hide for PT users in parttime tab */}
+      {activeTab === 'freelance' && (
         <Card>
           <CardHeader>
             <CardTitle>Sejarah Tugasan & Bayaran</CardTitle>
@@ -334,17 +334,17 @@ export default function PaymentView() {
         </Card>
       )}
 
-      {/* Part Time Salary Section */}
+      {/* Part Time Payment Section */}
       {user?.staffId?.startsWith('PT') && activeTab === 'parttime' && (
         <Card>
           <CardHeader>
-            <CardTitle>Part Time Gaji</CardTitle>
+            <CardTitle>Bayaran Part Time</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center py-12 text-gray-500">
               <DollarSign className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium mb-2">Maklumat Gaji Part Time</h3>
-              <p>Maklumat gaji bulanan akan dipaparkan di sini.</p>
+              <h3 className="text-lg font-medium mb-2">Maklumat Bayaran Part Time</h3>
+              <p>Maklumat bayaran bulanan akan dipaparkan di sini.</p>
               <p className="text-sm mt-2">Sila hubungi admin untuk maklumat lanjut.</p>
             </div>
           </CardContent>
