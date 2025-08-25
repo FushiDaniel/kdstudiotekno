@@ -26,10 +26,10 @@ export default function PaymentView() {
   useEffect(() => {
     if (!user) return;
 
-    const q = query(
-      collection(db, 'tasks'),
-      where('assignedTo', '==', user.uid)
-    );
+    // PT users can see all payments, others see only their own
+    const q = user.staffId?.startsWith('PT') 
+      ? query(collection(db, 'tasks'), where('status', '==', 'COMPLETED'))
+      : query(collection(db, 'tasks'), where('assignedTo', '==', user.uid));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const userTasks = snapshot.docs.map(doc => ({
@@ -311,7 +311,9 @@ export default function PaymentView() {
       {activeTab === 'freelance' && (
         <Card>
           <CardHeader>
-            <CardTitle>Sejarah Tugasan & Bayaran</CardTitle>
+            <CardTitle>
+              {user?.staffId?.startsWith('PT') ? 'Sejarah Tugasan & Bayaran (Semua Pengguna)' : 'Sejarah Tugasan & Bayaran'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

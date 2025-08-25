@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Task, TaskStatus, TaskPaymentStatus, User } from '@/types';
-import { collection, query, where, onSnapshot, doc, updateDoc, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { firebaseCache } from '@/lib/firebase-cache';
 import { formatCurrency, formatDate } from '@/lib/utils';
@@ -25,6 +25,13 @@ export default function AdminPaymentView() {
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<TaskPaymentStatus | 'all'>('all');
   const [processingPayments, setProcessingPayments] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'tasks' | 'parttime'>('tasks');
+  const [partTimeUsers, setPartTimeUsers] = useState<User[]>([]);
+  const [selectedPTUser, setSelectedPTUser] = useState<string>('');
+  const [ptPaymentAmount, setPtPaymentAmount] = useState('');
+  const [ptPaymentMonth, setPtPaymentMonth] = useState(new Date().getMonth());
+  const [ptPaymentYear, setPtPaymentYear] = useState(new Date().getFullYear());
+  const [ptPaymentDescription, setPtPaymentDescription] = useState('');
+  const [isCreatingPTPayment, setIsCreatingPTPayment] = useState(false);
 
   // Fetch tasks with completed status for payment processing using cache
   useEffect(() => {
@@ -54,7 +61,12 @@ export default function AdminPaymentView() {
       try {
         const allUsers = await firebaseCache.getCachedCollection<User>('users');
         setUsers(allUsers.filter(u => !u.isAdmin)); // Only non-admin users
-        console.log(`👥 AdminPaymentView: Loaded ${allUsers.length} users from cache/firestore`);
+        
+        // Filter Part Time users
+        const ptUsers = allUsers.filter(u => u.staffId?.startsWith('PT'));
+        setPartTimeUsers(ptUsers);
+        
+        console.log(`👥 AdminPaymentView: Loaded ${allUsers.length} users, ${ptUsers.length} PT users from cache/firestore`);
       } catch (error) {
         console.error('Error fetching users:', error);
       }
@@ -129,6 +141,43 @@ export default function AdminPaymentView() {
         newSet.delete(taskId);
         return newSet;
       });
+    }
+  };
+
+  const handleCreatePTPayment = async () => {
+    if (!user || !selectedPTUser || !ptPaymentAmount) {
+      alert('Sila isi semua maklumat yang diperlukan.');
+      return;
+    }
+
+    const selectedUser = partTimeUsers.find(u => u.uid === selectedPTUser);
+    if (!selectedUser) return;
+
+    setIsCreatingPTPayment(true);
+    try {
+      await addDoc(collection(db, 'partTimePayments'), {
+        userId: selectedPTUser,
+        userFullName: selectedUser.fullname,
+        userStaffId: selectedUser.staffId,
+        amount: parseFloat(ptPaymentAmount),
+        month: ptPaymentMonth,
+        year: ptPaymentYear,
+        description: ptPaymentDescription || `Bayaran Part Time ${new Date(ptPaymentYear, ptPaymentMonth).toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' })}`,
+        createdAt: Timestamp.fromDate(new Date()),
+        createdBy: user.uid,
+        createdByName: user.fullname
+      });
+
+      // Reset form
+      setSelectedPTUser('');
+      setPtPaymentAmount('');
+      setPtPaymentDescription('');
+      alert('Bayaran Part Time berjaya ditambah!');
+    } catch (error) {
+      console.error('Error creating PT payment:', error);
+      alert('Gagal menambah bayaran Part Time. Sila cuba lagi.');
+    } finally {
+      setIsCreatingPTPayment(false);
     }
   };
 
@@ -339,22 +388,103 @@ export default function AdminPaymentView() {
 
       {/* Part Time Payment Content */}
       {activeTab === 'parttime' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Urus Bayaran Part Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-12 text-gray-500">
-              <CreditCard className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium mb-2">Sistem Bayaran Part Time</h3>
-              <p>Sistem untuk mengurus bayaran Part Time akan dibangunkan di sini.</p>
-              <p className="text-sm mt-2">Admin boleh menambah dan mengurus bayaran untuk pekerja Part Time.</p>
-              <Button className="mt-4" variant="outline" disabled>
-                Akan Datang
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Tambah Bayaran Part Time</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pilih Pekerja Part Time
+                  </label>
+                  <select
+                    value={selectedPTUser}
+                    onChange={(e) => setSelectedPTUser(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    <option value="">Pilih pekerja...</option>
+                    {partTimeUsers.map(user => (
+                      <option key={user.uid} value={user.uid}>
+                        {user.fullname} ({user.staffId})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Jumlah Bayaran (RM)
+                  </label>
+                  <Input
+                    type="number"
+                    value={ptPaymentAmount}
+                    onChange={(e) => setPtPaymentAmount(e.target.value)}
+                    placeholder="0.00"
+                    step="0.01"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bulan
+                  </label>
+                  <select
+                    value={ptPaymentMonth}
+                    onChange={(e) => setPtPaymentMonth(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    {Array.from({length: 12}, (_, i) => (
+                      <option key={i} value={i}>
+                        {new Date(2024, i).toLocaleDateString('ms-MY', { month: 'long' })}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tahun
+                  </label>
+                  <select
+                    value={ptPaymentYear}
+                    onChange={(e) => setPtPaymentYear(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  >
+                    {Array.from({length: 3}, (_, i) => {
+                      const year = new Date().getFullYear() - 1 + i;
+                      return (
+                        <option key={year} value={year}>{year}</option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Keterangan (Opsional)
+                  </label>
+                  <Input
+                    value={ptPaymentDescription}
+                    onChange={(e) => setPtPaymentDescription(e.target.value)}
+                    placeholder="Keterangan tambahan..."
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <Button 
+                    onClick={handleCreatePTPayment}
+                    disabled={isCreatingPTPayment || !selectedPTUser || !ptPaymentAmount}
+                    className="w-full"
+                  >
+                    {isCreatingPTPayment ? 'Memproses...' : 'Tambah Bayaran'}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );
