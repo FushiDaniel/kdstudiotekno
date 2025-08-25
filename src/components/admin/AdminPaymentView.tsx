@@ -65,11 +65,14 @@ export default function AdminPaymentView() {
         // Bypass cache and fetch directly from Firestore
         const usersQuery = query(collection(db, 'users'));
         const snapshot = await getDocs(usersQuery);
-        const allUsers = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          id: doc.id,
-          uid: doc.id, // Ensure uid is set
-        })) as User[];
+        const allUsers: User[] = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            ...data,
+            id: doc.id,
+            uid: doc.id, // Ensure uid is set
+          } as User;
+        });
         
         setUsers(allUsers.filter(u => !u.isAdmin)); // Only non-admin users
         
