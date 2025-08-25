@@ -295,7 +295,7 @@ export default function PaymentView() {
               <>
                 <button
                   onClick={() => setActiveTab('all-users')}
-                  className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`px-2 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 min-w-0 ${
                     activeTab === 'all-users'
                       ? 'bg-gray-800 text-white shadow-md'
                       : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
@@ -306,7 +306,7 @@ export default function PaymentView() {
                 </button>
                 <button
                   onClick={() => setActiveTab('my-freelance')}
-                  className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`px-2 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 min-w-0 ${
                     activeTab === 'my-freelance'
                       ? 'bg-gray-800 text-white shadow-md'
                       : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
@@ -317,13 +317,13 @@ export default function PaymentView() {
                 </button>
                 <button
                   onClick={() => setActiveTab('part-time')}
-                  className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`px-2 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 min-w-0 ${
                     activeTab === 'part-time'
                       ? 'bg-gray-800 text-white shadow-md'
                       : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  <span className="sm:hidden">PT</span>
+                  <span className="sm:hidden">Bayaran</span>
                   <span className="hidden sm:inline">Bayaran Part Time</span>
                 </button>
               </>
@@ -331,7 +331,7 @@ export default function PaymentView() {
               // Non-PT users get only 1 tab
               <button
                 onClick={() => setActiveTab('my-freelance')}
-                className="px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-medium text-sm bg-gray-800 text-white shadow-md flex-shrink-0"
+                className="px-4 sm:px-6 py-2 sm:py-3 rounded-lg sm:rounded-2xl font-medium text-sm bg-gray-800 text-white shadow-md flex-shrink-0"
               >
                 <span className="sm:hidden">Tugasan Saya</span>
                 <span className="hidden sm:inline">Tugasan / Freelance Saya</span>

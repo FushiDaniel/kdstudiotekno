@@ -33,6 +33,7 @@ export default function AdminPaymentView() {
   const [ptPaymentYear, setPtPaymentYear] = useState(new Date().getFullYear());
   const [ptPaymentDescription, setPtPaymentDescription] = useState('');
   const [isCreatingPTPayment, setIsCreatingPTPayment] = useState(false);
+  const [usersLoading, setUsersLoading] = useState(true);
 
   // Fetch tasks with completed status for payment processing using cache
   useEffect(() => {
@@ -59,17 +60,21 @@ export default function AdminPaymentView() {
   // Fetch users for dropdown using cache
   useEffect(() => {
     const fetchUsers = async () => {
+      setUsersLoading(true);
       try {
         const allUsers = await firebaseCache.getCachedCollection<User>('users');
         setUsers(allUsers.filter(u => !u.isAdmin)); // Only non-admin users
         
-        // Filter Part Time users
+        // Filter Part Time users - include all users with PT prefix regardless of admin status
         const ptUsers = allUsers.filter(u => u.staffId?.startsWith('PT'));
         setPartTimeUsers(ptUsers);
         
         console.log(`👥 AdminPaymentView: Loaded ${allUsers.length} users, ${ptUsers.length} PT users from cache/firestore`);
+        console.log(`👥 PT Users details:`, ptUsers.map(u => ({ uid: u.uid, name: u.fullname, staffId: u.staffId, isAdmin: u.isAdmin })));
       } catch (error) {
         console.error('Error fetching users:', error);
+      } finally {
+        setUsersLoading(false);
       }
     };
 
@@ -180,11 +185,30 @@ export default function AdminPaymentView() {
     console.log('Selected PT User ID:', selectedPTUser);
     console.log('Available PT Users:', partTimeUsers.map(u => ({ uid: u.uid, name: u.fullname, staffId: u.staffId })));
 
-    const selectedUser = partTimeUsers.find(u => u.uid === selectedPTUser);
-    console.log('Found selected user:', selectedUser);
+    // First try to find in partTimeUsers, then fallback to all users
+    let selectedUser = partTimeUsers.find(u => u.uid === selectedPTUser);
+    
+    // If not found in partTimeUsers, check all users as fallback
+    if (!selectedUser) {
+      console.log('User not found in partTimeUsers, checking all users...');
+      selectedUser = users.find(u => u.uid === selectedPTUser && u.staffId?.startsWith('PT'));
+      if (selectedUser) {
+        console.log('Found user in all users list:', selectedUser);
+        // Update partTimeUsers to include this user for future reference
+        setPartTimeUsers(prev => {
+          if (!prev.find(u => u.uid === selectedUser.uid)) {
+            return [...prev, selectedUser];
+          }
+          return prev;
+        });
+      }
+    }
+
+    console.log('Final selected user:', selectedUser);
     
     if (!selectedUser) {
-      console.error('PT user not found. PT Users available:', partTimeUsers.length);
+      console.error('PT user not found in both lists. PT Users available:', partTimeUsers.length, 'All users:', users.length);
+      console.error('All users with PT staffId:', users.filter(u => u.staffId?.startsWith('PT')));
       Swal.fire({
         icon: 'error',
         title: 'Pengguna Tidak Dijumpai',
@@ -490,14 +514,24 @@ export default function AdminPaymentView() {
                     value={selectedPTUser}
                     onChange={(e) => setSelectedPTUser(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    disabled={usersLoading}
                   >
-                    <option value="">Pilih pekerja...</option>
+                    <option value="">
+                      {usersLoading ? 'Memuat pekerja...' : 
+                       partTimeUsers.length === 0 ? 'Tiada pekerja Part Time tersedia' :
+                       'Pilih pekerja...'}
+                    </option>
                     {partTimeUsers.map(user => (
                       <option key={user.uid} value={user.uid}>
                         {user.fullname} ({user.staffId})
                       </option>
                     ))}
                   </select>
+                  {partTimeUsers.length === 0 && !usersLoading && (
+                    <p className="text-sm text-red-600 mt-1">
+                      Tiada pekerja Part Time dijumpai. Sila pastikan pekerja mempunyai Staff ID bermula dengan 'PT'.
+                    </p>
+                  )}
                 </div>
                 
                 <div>
