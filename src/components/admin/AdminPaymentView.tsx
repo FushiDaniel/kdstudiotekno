@@ -57,22 +57,39 @@ export default function AdminPaymentView() {
     return () => unsubscribe();
   }, []);
 
-  // Fetch users for dropdown using cache
+  // Fetch users for dropdown - bypass cache temporarily
   useEffect(() => {
     const fetchUsers = async () => {
       setUsersLoading(true);
       try {
-        const allUsers = await firebaseCache.getCachedCollection<User>('users');
+        // Bypass cache and fetch directly from Firestore
+        const usersQuery = query(collection(db, 'users'));
+        const snapshot = await getDocs(usersQuery);
+        const allUsers = snapshot.docs.map(doc => ({
+          id: doc.id,
+          uid: doc.id, // Ensure uid is set
+          ...doc.data()
+        })) as User[];
+        
         setUsers(allUsers.filter(u => !u.isAdmin)); // Only non-admin users
         
         // Filter Part Time users - include all users with PT prefix regardless of admin status
         const ptUsers = allUsers.filter(u => u.staffId?.startsWith('PT'));
         setPartTimeUsers(ptUsers);
         
-        console.log(`👥 AdminPaymentView: Loaded ${allUsers.length} users, ${ptUsers.length} PT users from cache/firestore`);
-        console.log(`👥 PT Users details:`, ptUsers.map(u => ({ uid: u.uid, name: u.fullname, staffId: u.staffId, isAdmin: u.isAdmin })));
+        console.log(`👥 AdminPaymentView: Loaded ${allUsers.length} users directly from Firestore`);
+        console.log(`👥 PT Users details:`, ptUsers.map(u => ({ 
+          uid: u.uid, 
+          id: u.id,
+          name: u.fullname, 
+          staffId: u.staffId, 
+          isAdmin: u.isAdmin 
+        })));
+        
+        // Clear the cache for users to ensure fresh data
+        firebaseCache.clearCollectionCache('users');
       } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error('Error fetching users directly:', error);
       } finally {
         setUsersLoading(false);
       }
@@ -182,29 +199,53 @@ export default function AdminPaymentView() {
       return;
     }
 
+    console.log('=== PT PAYMENT DEBUG START ===');
     console.log('Selected PT User ID:', selectedPTUser);
-    console.log('Available PT Users:', partTimeUsers.map(u => ({ uid: u.uid, name: u.fullname, staffId: u.staffId })));
+    console.log('Selected PT User ID type:', typeof selectedPTUser);
+    console.log('Available PT Users:', partTimeUsers.map(u => ({ 
+      uid: u.uid, 
+      id: u.id,
+      name: u.fullname, 
+      staffId: u.staffId,
+      uidType: typeof u.uid,
+      idType: typeof u.id
+    })));
+    console.log('All users count:', users.length);
+    console.log('PT users count:', partTimeUsers.length);
 
-    // First try to find in partTimeUsers, then fallback to all users
-    let selectedUser = partTimeUsers.find(u => u.uid === selectedPTUser);
+    // Try to find user - check both uid and id fields for compatibility
+    let selectedUser = partTimeUsers.find(u => u.uid === selectedPTUser || u.id === selectedPTUser);
+    console.log('Found in partTimeUsers:', selectedUser);
     
     // If not found in partTimeUsers, check all users as fallback
     if (!selectedUser) {
       console.log('User not found in partTimeUsers, checking all users...');
-      selectedUser = users.find(u => u.uid === selectedPTUser && u.staffId?.startsWith('PT'));
+      console.log('Looking for uid/id:', selectedPTUser, 'with PT prefix');
+      selectedUser = users.find(u => {
+        const matchesId = u.uid === selectedPTUser || u.id === selectedPTUser;
+        const hasPTPrefix = u.staffId?.startsWith('PT');
+        console.log('Checking user:', u.uid || u.id, u.staffId, 'matches:', matchesId && hasPTPrefix);
+        return matchesId && hasPTPrefix;
+      });
+      
       if (selectedUser) {
         console.log('Found user in all users list:', selectedUser);
         // Update partTimeUsers to include this user for future reference
         setPartTimeUsers(prev => {
-          if (!prev.find(u => u.uid === selectedUser!.uid)) {
+          const userKey = selectedUser!.uid || selectedUser!.id;
+          if (!prev.find(u => (u.uid || u.id) === userKey)) {
             return [...prev, selectedUser!];
           }
           return prev;
         });
+      } else {
+        console.log('User still not found in all users');
+        console.log('All users with PT staffId:', users.filter(u => u.staffId?.startsWith('PT')));
       }
     }
 
     console.log('Final selected user:', selectedUser);
+    console.log('=== PT PAYMENT DEBUG END ===');
     
     if (!selectedUser) {
       console.error('PT user not found in both lists. PT Users available:', partTimeUsers.length, 'All users:', users.length);
@@ -233,7 +274,7 @@ export default function AdminPaymentView() {
     setIsCreatingPTPayment(true);
     try {
       const paymentData = {
-        userId: selectedPTUser,
+        userId: selectedUser.uid || selectedUser.id, // Use the actual user ID from the found user
         userFullName: selectedUser.fullname,
         userStaffId: selectedUser.staffId,
         amount: amount,
@@ -522,7 +563,7 @@ export default function AdminPaymentView() {
                        'Pilih pekerja...'}
                     </option>
                     {partTimeUsers.map(user => (
-                      <option key={user.uid} value={user.uid}>
+                      <option key={user.uid || user.id} value={user.uid || user.id}>
                         {user.fullname} ({user.staffId})
                       </option>
                     ))}
