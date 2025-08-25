@@ -49,14 +49,36 @@ export default function AdminTimeTrackingView() {
       'clockInRecords',
       (records) => {
         try {
-          // Filter for FT and PT users only
-          const ftPtRecords = records.filter(record => 
-            record.userStaffId?.startsWith('FT') || record.userStaffId?.startsWith('PT')
-          );
+          // Filter for FT and PT users only and ensure proper data conversion
+          const ftPtRecords = records
+            .filter(record => 
+              record.userStaffId?.startsWith('FT') || record.userStaffId?.startsWith('PT')
+            )
+            .map(record => ({
+              ...record,
+              // Ensure dates are properly converted from Firestore timestamps
+              clockInTime: record.clockInTime instanceof Date ? record.clockInTime : 
+                          record.clockInTime?.toDate ? record.clockInTime.toDate() : 
+                          new Date(record.clockInTime),
+              clockOutTime: record.clockOutTime instanceof Date ? record.clockOutTime : 
+                           record.clockOutTime?.toDate ? record.clockOutTime.toDate() : 
+                           record.clockOutTime ? new Date(record.clockOutTime) : null,
+              // Ensure totalMinutes is a number
+              totalMinutes: record.totalMinutes ? Number(record.totalMinutes) : undefined
+            }));
+          
+          console.log(`⏰ AdminTimeTrackingView: Loaded ${ftPtRecords.length} FT/PT clock-in records from cache/firestore`);
+          console.log('Sample records:', ftPtRecords.slice(0, 3).map(r => ({
+            id: r.id,
+            date: r.date,
+            totalMinutes: r.totalMinutes,
+            userStaffId: r.userStaffId,
+            clockInTime: r.clockInTime,
+            clockOutTime: r.clockOutTime
+          })));
           
           setClockInRecords(ftPtRecords);
           setLoading(false);
-          console.log(`⏰ AdminTimeTrackingView: Loaded ${ftPtRecords.length} FT/PT clock-in records from cache/firestore`);
         } catch (error) {
           console.error('Error processing clock in records:', error);
           setLoading(false);
@@ -120,6 +142,8 @@ export default function AdminTimeTrackingView() {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     
+    console.log(`Calculating monthly stats for user ${userId} for ${currentMonth + 1}/${currentYear}`);
+    
     const monthlyRecords = clockInRecords.filter(record => {
       if (!record.date || record.userId !== userId) return false;
       
@@ -128,20 +152,48 @@ export default function AdminTimeTrackingView() {
       if (typeof record.date === 'string') {
         // Parse YYYY-MM-DD as local date, not UTC to avoid timezone issues
         const [year, month, day] = record.date.split('-').map(Number);
+        if (isNaN(year) || isNaN(month) || isNaN(day)) {
+          console.warn(`Invalid date format for record ${record.id}: ${record.date}`);
+          return false;
+        }
         recordDate = new Date(year, month - 1, day); // month is 0-indexed
       } else {
         recordDate = new Date(record.date);
       }
       
-      return recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
+      const isCurrentMonth = recordDate.getMonth() === currentMonth && recordDate.getFullYear() === currentYear;
+      
+      if (isCurrentMonth) {
+        console.log(`Found monthly record for user ${userId}:`, {
+          id: record.id,
+          date: record.date,
+          totalMinutes: record.totalMinutes,
+          clockInTime: record.clockInTime,
+          clockOutTime: record.clockOutTime
+        });
+      }
+      
+      return isCurrentMonth;
     });
 
-    const totalMinutes = monthlyRecords
-      .filter(record => record.totalMinutes)
-      .reduce((total, record) => total + (record.totalMinutes || 0), 0);
+    console.log(`Found ${monthlyRecords.length} monthly records for user ${userId}`);
 
-    const totalSessions = monthlyRecords.length;
+    const totalMinutes = monthlyRecords
+      .filter(record => record.totalMinutes && record.totalMinutes > 0)
+      .reduce((total, record) => {
+        console.log(`Adding ${record.totalMinutes} minutes from record ${record.id}`);
+        return total + (record.totalMinutes || 0);
+      }, 0);
+
+    const totalSessions = monthlyRecords.filter(record => record.clockInTime).length;
     const daysWorked = new Set(monthlyRecords.map(record => record.date)).size;
+
+    console.log(`User ${userId} monthly stats:`, {
+      totalMinutes,
+      totalSessions,
+      daysWorked,
+      recordCount: monthlyRecords.length
+    });
 
     return {
       totalMinutes,
@@ -311,7 +363,13 @@ export default function AdminTimeTrackingView() {
               <div>
                 <p className="text-sm text-gray-600">Clock In Hari Ini</p>
                 <p className="text-2xl font-bold">
-                  {clockInRecords.filter(r => r.date === new Date().toISOString().split('T')[0]).length}
+                  {clockInRecords.filter(r => {
+                    const today = new Date();
+                    const todayString = today.getFullYear() + '-' + 
+                      String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                      String(today.getDate()).padStart(2, '0');
+                    return r.date === todayString;
+                  }).length}
                 </p>
               </div>
             </div>
