@@ -196,8 +196,8 @@ export default function AdminPaymentView() {
         console.log('Found user in all users list:', selectedUser);
         // Update partTimeUsers to include this user for future reference
         setPartTimeUsers(prev => {
-          if (!prev.find(u => u.uid === selectedUser.uid)) {
-            return [...prev, selectedUser];
+          if (!prev.find(u => u.uid === selectedUser!.uid)) {
+            return [...prev, selectedUser!];
           }
           return prev;
         });
