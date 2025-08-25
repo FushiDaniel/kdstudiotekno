@@ -46,10 +46,18 @@ export default function AdminTaskView() {
     const unsubscribe = firebaseCache.setupRealtimeListener<Task>(
       'tasks',
       (allTasks) => {
-        // Sort manually to avoid index requirement
-        const sortedTasks = allTasks.sort((a, b) => 
-          b.createdAt.getTime() - a.createdAt.getTime()
-        );
+        // Sort tasks: admin approval needed first, then by created date
+        const sortedTasks = allTasks.sort((a, b) => {
+          // Tasks that need admin approval (SUBMITTED status) come first
+          const aNeedsApproval = a.status === 'SUBMITTED';
+          const bNeedsApproval = b.status === 'SUBMITTED';
+          
+          if (aNeedsApproval && !bNeedsApproval) return -1;
+          if (!aNeedsApproval && bNeedsApproval) return 1;
+          
+          // Then sort by created date (newest first)
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        });
         
         setTasks(sortedTasks);
         setLoading(false);

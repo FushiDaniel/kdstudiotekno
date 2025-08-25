@@ -658,12 +658,8 @@ function UserCard({ user, userSkills, onClick, showDetails }: UserCardProps) {
             <h3 className="font-semibold text-gray-900 text-sm">
               {user.fullname || 'Nama Tidak Disetkan'}
             </h3>
-            <p className="text-gray-600 text-xs">{user.staffId}</p>
-          </div>
-          
-          {/* Status Badge */}
-          <div className="flex-shrink-0">
-            <Badge className={getStatusColor(user.availabilityStatus)} variant="secondary">
+            <p className="text-gray-600 text-xs mb-1">{user.staffId}</p>
+            <Badge className={`${getStatusColor(user.availabilityStatus)} text-xs`} variant="secondary">
               {getStatusText(user.availabilityStatus)}
             </Badge>
           </div>
