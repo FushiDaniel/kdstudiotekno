@@ -14,6 +14,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { DollarSign, CheckCircle, XCircle, Search, Users, Calendar, FileText, CreditCard } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { notificationService } from '@/lib/notifications';
+import Swal from 'sweetalert2';
 
 export default function AdminPaymentView() {
   const { user } = useAuth();
@@ -81,7 +82,12 @@ export default function AdminPaymentView() {
 
     // Check if user is Part Time - they cannot approve payments for others
     if (user.staffId?.startsWith('PT') && action === 'approve') {
-      alert('Pekerja Part Time tidak dibenarkan meluluskan bayaran untuk orang lain.');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Tidak Dibenarkan',
+        text: 'Pekerja Part Time tidak dibenarkan meluluskan bayaran untuk orang lain.',
+        confirmButtonColor: '#374151'
+      });
       return;
     }
 
@@ -134,7 +140,12 @@ export default function AdminPaymentView() {
       console.log(`Payment ${action === 'approve' ? 'approved' : 'denied'} for task: ${task.name}`);
     } catch (error) {
       console.error(`Error ${action === 'approve' ? 'approving' : 'denying'} payment:`, error);
-      alert(`Failed to ${action} payment. Please try again.`);
+      Swal.fire({
+        icon: 'error',
+        title: 'Ralat Berlaku',
+        text: `Gagal ${action === 'approve' ? 'meluluskan' : 'menolak'} bayaran. Sila cuba lagi.`,
+        confirmButtonColor: '#374151'
+      });
     } finally {
       setProcessingPayments(prev => {
         const newSet = new Set(prev);
@@ -146,19 +157,52 @@ export default function AdminPaymentView() {
 
   const handleCreatePTPayment = async () => {
     if (!user || !selectedPTUser || !ptPaymentAmount || ptPaymentAmount.trim() === '') {
-      alert('Sila isi semua maklumat yang diperlukan.');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Maklumat Tidak Lengkap',
+        text: 'Sila isi semua maklumat yang diperlukan.',
+        confirmButtonColor: '#374151'
+      });
       return;
     }
 
     const amount = parseFloat(ptPaymentAmount);
     if (isNaN(amount) || amount <= 0) {
-      alert('Sila masukkan jumlah bayaran yang sah.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Jumlah Tidak Sah',
+        text: 'Sila masukkan jumlah bayaran yang sah.',
+        confirmButtonColor: '#374151'
+      });
       return;
     }
 
+    console.log('Selected PT User ID:', selectedPTUser);
+    console.log('Available PT Users:', partTimeUsers.map(u => ({ uid: u.uid, name: u.fullname, staffId: u.staffId })));
+
     const selectedUser = partTimeUsers.find(u => u.uid === selectedPTUser);
+    console.log('Found selected user:', selectedUser);
+    
     if (!selectedUser) {
-      alert('Pekerja Part Time yang dipilih tidak sah.');
+      console.error('PT user not found. PT Users available:', partTimeUsers.length);
+      Swal.fire({
+        icon: 'error',
+        title: 'Pengguna Tidak Dijumpai',
+        text: `Pekerja Part Time yang dipilih tidak sah. (${partTimeUsers.length} PT users tersedia)`,
+        confirmButtonColor: '#374151'
+      });
+      return;
+    }
+
+    // Double check the user is actually a PT user
+    if (!selectedUser.staffId?.startsWith('PT')) {
+      console.error('Selected user is not a PT user:', selectedUser.staffId);
+      Swal.fire({
+        icon: 'error',
+        title: 'Pengguna Tidak Sah',
+        text: 'Pengguna yang dipilih bukan pekerja Part Time.',
+        confirmButtonColor: '#374151'
+      });
       return;
     }
 
@@ -190,7 +234,12 @@ export default function AdminPaymentView() {
       setPtPaymentAmount('');
       setPtPaymentDescription('');
       
-      alert('Bayaran Part Time berjaya ditambah!');
+      Swal.fire({
+        icon: 'success',
+        title: 'Berjaya!',
+        text: 'Bayaran Part Time berjaya ditambah!',
+        confirmButtonColor: '#059669'
+      });
     } catch (error: any) {
       console.error('Detailed error creating PT payment:', error);
       console.error('Error code:', error?.code);
@@ -208,7 +257,12 @@ export default function AdminPaymentView() {
         errorMessage += 'Sila cuba lagi.';
       }
       
-      alert(errorMessage);
+      Swal.fire({
+        icon: 'error',
+        title: 'Ralat Berlaku',
+        text: errorMessage,
+        confirmButtonColor: '#374151'
+      });
     } finally {
       setIsCreatingPTPayment(false);
     }

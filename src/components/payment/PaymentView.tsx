@@ -289,48 +289,52 @@ export default function PaymentView() {
 
         {/* Tab Navigation */}
         <div className="mb-6">
-          <div className="flex space-x-2 overflow-x-auto">
+          <div className="flex space-x-1 sm:space-x-2 overflow-x-auto pb-2 scrollbar-hide">
             {user?.staffId?.startsWith('PT') ? (
               // PT users get 3 tabs
               <>
                 <button
                   onClick={() => setActiveTab('all-users')}
-                  className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 whitespace-nowrap ${
+                  className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                     activeTab === 'all-users'
                       ? 'bg-gray-800 text-white shadow-md'
                       : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  Semua Pengguna
+                  <span className="sm:hidden">Semua</span>
+                  <span className="hidden sm:inline">Semua Pengguna</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('my-freelance')}
-                  className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 whitespace-nowrap ${
+                  className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                     activeTab === 'my-freelance'
                       ? 'bg-gray-800 text-white shadow-md'
                       : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  Tugasan Saya
+                  <span className="sm:hidden">Tugasan</span>
+                  <span className="hidden sm:inline">Tugasan Saya</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('part-time')}
-                  className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 whitespace-nowrap ${
+                  className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                     activeTab === 'part-time'
                       ? 'bg-gray-800 text-white shadow-md'
                       : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  Bayaran Part Time
+                  <span className="sm:hidden">PT</span>
+                  <span className="hidden sm:inline">Bayaran Part Time</span>
                 </button>
               </>
             ) : (
               // Non-PT users get only 1 tab
               <button
                 onClick={() => setActiveTab('my-freelance')}
-                className="px-6 py-3 rounded-2xl font-medium text-sm bg-gray-800 text-white shadow-md"
+                className="px-4 sm:px-6 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-medium text-sm bg-gray-800 text-white shadow-md flex-shrink-0"
               >
-                Tugasan / Freelance Saya
+                <span className="sm:hidden">Tugasan Saya</span>
+                <span className="hidden sm:inline">Tugasan / Freelance Saya</span>
               </button>
             )}
           </div>
