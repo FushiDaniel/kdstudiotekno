@@ -69,8 +69,7 @@ export default function AdminPaymentView() {
           const data = doc.data();
           return {
             ...data,
-            id: doc.id,
-            uid: doc.id, // Ensure uid is set
+            uid: doc.id, // Set uid to document ID
           } as unknown as User;
         });
         
@@ -83,7 +82,6 @@ export default function AdminPaymentView() {
         console.log(`👥 AdminPaymentView: Loaded ${allUsers.length} users directly from Firestore`);
         console.log(`👥 PT Users details:`, ptUsers.map(u => ({ 
           uid: u.uid, 
-          id: u.id,
           name: u.fullname, 
           staffId: u.staffId, 
           isAdmin: u.isAdmin 
@@ -207,27 +205,25 @@ export default function AdminPaymentView() {
     console.log('Selected PT User ID type:', typeof selectedPTUser);
     console.log('Available PT Users:', partTimeUsers.map(u => ({ 
       uid: u.uid, 
-      id: u.id,
       name: u.fullname, 
       staffId: u.staffId,
-      uidType: typeof u.uid,
-      idType: typeof u.id
+      uidType: typeof u.uid
     })));
     console.log('All users count:', users.length);
     console.log('PT users count:', partTimeUsers.length);
 
-    // Try to find user - check both uid and id fields for compatibility
-    let selectedUser = partTimeUsers.find(u => u.uid === selectedPTUser || u.id === selectedPTUser);
+    // Try to find user using uid (document ID)
+    let selectedUser = partTimeUsers.find(u => u.uid === selectedPTUser);
     console.log('Found in partTimeUsers:', selectedUser);
     
     // If not found in partTimeUsers, check all users as fallback
     if (!selectedUser) {
       console.log('User not found in partTimeUsers, checking all users...');
-      console.log('Looking for uid/id:', selectedPTUser, 'with PT prefix');
+      console.log('Looking for uid:', selectedPTUser, 'with PT prefix');
       selectedUser = users.find(u => {
-        const matchesId = u.uid === selectedPTUser || u.id === selectedPTUser;
+        const matchesId = u.uid === selectedPTUser;
         const hasPTPrefix = u.staffId?.startsWith('PT');
-        console.log('Checking user:', u.uid || u.id, u.staffId, 'matches:', matchesId && hasPTPrefix);
+        console.log('Checking user:', u.uid, u.staffId, 'matches:', matchesId && hasPTPrefix);
         return matchesId && hasPTPrefix;
       });
       
@@ -235,8 +231,7 @@ export default function AdminPaymentView() {
         console.log('Found user in all users list:', selectedUser);
         // Update partTimeUsers to include this user for future reference
         setPartTimeUsers(prev => {
-          const userKey = selectedUser!.uid || selectedUser!.id;
-          if (!prev.find(u => (u.uid || u.id) === userKey)) {
+          if (!prev.find(u => u.uid === selectedUser!.uid)) {
             return [...prev, selectedUser!];
           }
           return prev;
@@ -277,7 +272,7 @@ export default function AdminPaymentView() {
     setIsCreatingPTPayment(true);
     try {
       const paymentData = {
-        userId: selectedUser.uid || selectedUser.id, // Use the actual user ID from the found user
+        userId: selectedUser.uid, // Use the actual user ID from the found user
         userFullName: selectedUser.fullname,
         userStaffId: selectedUser.staffId,
         amount: amount,
@@ -566,7 +561,7 @@ export default function AdminPaymentView() {
                        'Pilih pekerja...'}
                     </option>
                     {partTimeUsers.map(user => (
-                      <option key={user.uid || user.id} value={user.uid || user.id}>
+                      <option key={user.uid} value={user.uid}>
                         {user.fullname} ({user.staffId})
                       </option>
                     ))}
