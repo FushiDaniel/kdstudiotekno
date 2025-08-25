@@ -71,7 +71,7 @@ export default function AdminPaymentView() {
             ...data,
             id: doc.id,
             uid: doc.id, // Ensure uid is set
-          } as User;
+          } as unknown as User;
         });
         
         setUsers(allUsers.filter(u => !u.isAdmin)); // Only non-admin users
