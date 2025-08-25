@@ -66,9 +66,9 @@ export default function AdminPaymentView() {
         const usersQuery = query(collection(db, 'users'));
         const snapshot = await getDocs(usersQuery);
         const allUsers = snapshot.docs.map(doc => ({
+          ...doc.data(),
           id: doc.id,
           uid: doc.id, // Ensure uid is set
-          ...doc.data()
         })) as User[];
         
         setUsers(allUsers.filter(u => !u.isAdmin)); // Only non-admin users
