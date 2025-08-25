@@ -871,59 +871,62 @@ function AdminTaskCard({ task, onViewDetail, onAssignTask, onEditTask, onDeleteT
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow border border-gray-200">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-lg text-gray-900">{task.name}</CardTitle>
-            <p className="text-sm text-gray-500 mt-1">ID: {task.id}</p>
+    <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-semibold text-gray-900 break-words text-sm sm:text-base">{task.name}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 font-mono break-all">ID: {task.id}</p>
           </div>
-          <Badge className={getStatusColor(task.status)}>
-            {getStatusBadge(task.status)}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <p className="text-gray-600 mb-6">{task.description}</p>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div className="flex items-center text-sm text-gray-900">
-            <DollarSign className="h-4 w-4 mr-2 text-gray-500" />
-            <span className="font-medium">RM {task.amount.toFixed(2)}</span>
-          </div>
-          <div className="flex items-center text-sm text-gray-900">
-            <Clock className="h-4 w-4 mr-2 text-gray-500" />
-            <span>{formatDate(task.deadline)}</span>
-          </div>
-          <div className="flex items-center text-sm text-gray-900">
-            <Users className="h-4 w-4 mr-2 text-gray-500" />
-            <span>{task.assignedToName || 'Belum ditugaskan'}</span>
-          </div>
-          <div className="text-sm text-gray-900">
-            <span className="text-gray-500">Dicipta:</span> {formatDate(task.createdAt)}
+          <div className="text-left sm:text-right flex-shrink-0">
+            <div className="text-lg sm:text-xl font-bold">{formatCurrency(task.amount)}</div>
+            <div className="flex flex-wrap gap-2 sm:justify-end mt-2">
+              <Badge className={`${getStatusColor(task.status)} text-xs`}>
+                {getStatusBadge(task.status)}
+              </Badge>
+            </div>
           </div>
         </div>
 
+        {/* Description */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+          <div className="text-gray-700 text-sm leading-relaxed break-words max-h-20 overflow-y-auto">
+            {formatMessageWithLinks(task.description)}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-4">
+          <div className="flex items-center">
+            <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+            <span className="truncate">Deadline: {formatDate(task.deadline)}</span>
+          </div>
+          <div className="flex items-center">
+            <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+            <span className="truncate">{task.assignedToName || 'Belum ditugaskan'}</span>
+          </div>
+        </div>
+        
+        {/* Skills */}
         {task.skills?.length > 0 && (
-          <div className="mb-6">
-            <p className="text-sm text-gray-500 mb-2">Kemahiran Diperlukan:</p>
-            <div className="flex flex-wrap gap-2">
-              {task.skills.map((skill, index) => (
-                <Badge key={index} variant="secondary" className="bg-gray-100 text-gray-800">
-                  {skill}
-                </Badge>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {task.skills.map((skill, index) => (
+              <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
+                {skill}
+              </Badge>
+            ))}
           </div>
         )}
 
-        <div className="flex justify-end space-x-2">
+        {/* Action buttons - Mobile responsive with proper wrapping */}
+        <div className="flex flex-col sm:flex-row flex-wrap gap-2">
           <Button 
             variant="outline" 
-            className="text-gray-900 border-gray-300"
+            size="sm"
+            className="flex-1 min-w-[120px] text-gray-900 border-gray-300"
             onClick={onViewDetail}
           >
-            Lihat Detail
+            <FileText className="h-4 w-4 mr-2" />
+            Detail
           </Button>
           
           {canEditOrDelete(task) && (
@@ -932,18 +935,18 @@ function AdminTaskCard({ task, onViewDetail, onAssignTask, onEditTask, onDeleteT
                 variant="outline"
                 size="sm"
                 onClick={() => onEditTask(task)}
-                className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                className="flex-1 min-w-[120px] text-blue-600 border-blue-300 hover:bg-blue-50"
               >
-                <Edit className="h-4 w-4 mr-1" />
+                <Edit className="h-4 w-4 mr-2" />
                 Edit
               </Button>
               <Button 
                 variant="outline"
                 size="sm"
                 onClick={() => onDeleteTask(task)}
-                className="text-red-600 border-red-300 hover:bg-red-50"
+                className="flex-1 min-w-[120px] text-red-600 border-red-300 hover:bg-red-50"
               >
-                <Trash2 className="h-4 w-4 mr-1" />
+                <Trash2 className="h-4 w-4 mr-2" />
                 Padam
               </Button>
             </>
@@ -952,19 +955,21 @@ function AdminTaskCard({ task, onViewDetail, onAssignTask, onEditTask, onDeleteT
           {!task.assignedTo && task.status === TaskStatus.NOT_STARTED && (
             <Button 
               onClick={() => onAssignTask(task)}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="flex-1 min-w-[120px] bg-purple-600 hover:bg-purple-700 text-white"
               size="sm"
             >
-              <UserPlus className="h-4 w-4 mr-1" />
+              <UserPlus className="h-4 w-4 mr-2" />
               Tugaskan
             </Button>
           )}
           {task.status === TaskStatus.SUBMITTED && (
             <Button 
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="flex-1 min-w-[120px] bg-blue-600 hover:bg-blue-700 text-white"
+              size="sm"
               onClick={onViewDetail}
             >
-              Semak Tugasan
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Semak
             </Button>
           )}
         </div>
