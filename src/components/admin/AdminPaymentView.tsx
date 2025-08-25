@@ -164,17 +164,7 @@ export default function AdminPaymentView() {
 
     setIsCreatingPTPayment(true);
     try {
-      console.log('Creating PT payment:', {
-        userId: selectedPTUser,
-        userFullName: selectedUser.fullname,
-        userStaffId: selectedUser.staffId,
-        amount: amount,
-        month: ptPaymentMonth,
-        year: ptPaymentYear,
-        description: ptPaymentDescription || `Bayaran Part Time ${new Date(ptPaymentYear, ptPaymentMonth).toLocaleDateString('ms-MY', { month: 'long', year: 'numeric' })}`
-      });
-
-      await addDoc(collection(db, 'partTimePayments'), {
+      const paymentData = {
         userId: selectedPTUser,
         userFullName: selectedUser.fullname,
         userStaffId: selectedUser.staffId,
@@ -185,18 +175,40 @@ export default function AdminPaymentView() {
         createdAt: Timestamp.fromDate(new Date()),
         createdBy: user.uid,
         createdByName: user.fullname
-      });
+      };
+      
+      console.log('Creating PT payment with data:', paymentData);
+      console.log('Database reference:', db);
+      console.log('User auth status:', user);
 
-      console.log('PT payment created successfully');
+      const docRef = await addDoc(collection(db, 'partTimePayments'), paymentData);
+      
+      console.log('PT payment created successfully with ID:', docRef.id);
 
       // Reset form
       setSelectedPTUser('');
       setPtPaymentAmount('');
       setPtPaymentDescription('');
+      
       alert('Bayaran Part Time berjaya ditambah!');
-    } catch (error) {
-      console.error('Error creating PT payment:', error);
-      alert(`Gagal menambah bayaran Part Time: ${error.message || 'Sila cuba lagi.'}`);
+    } catch (error: any) {
+      console.error('Detailed error creating PT payment:', error);
+      console.error('Error code:', error?.code);
+      console.error('Error message:', error?.message);
+      
+      let errorMessage = 'Gagal menambah bayaran Part Time. ';
+      
+      if (error?.code === 'permission-denied') {
+        errorMessage += 'Anda tidak mempunyai kebenaran untuk menambah bayaran.';
+      } else if (error?.code === 'unavailable') {
+        errorMessage += 'Perkhidmatan tidak tersedia pada masa ini.';
+      } else if (error?.message) {
+        errorMessage += `Error: ${error.message}`;
+      } else {
+        errorMessage += 'Sila cuba lagi.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsCreatingPTPayment(false);
     }

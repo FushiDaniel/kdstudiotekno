@@ -35,17 +35,32 @@ export default function PaymentView() {
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [showFilters, setShowFilters] = useState(false);
-  const [activeTab, setActiveTab] = useState<'freelance' | 'parttime'>('freelance');
+  const [activeTab, setActiveTab] = useState<'all-users' | 'my-freelance' | 'part-time'>('my-freelance');
   const [ptPayments, setPtPayments] = useState<PartTimePayment[]>([]);
   const [ptLoading, setPtLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
 
-    // PT users can see all payments, others see only their own
-    const q = user.staffId?.startsWith('PT') 
-      ? query(collection(db, 'tasks'), where('status', '==', 'COMPLETED'))
-      : query(collection(db, 'tasks'), where('assignedTo', '==', user.uid));
+    // Different queries based on active tab for PT users
+    let q;
+    if (user.staffId?.startsWith('PT')) {
+      if (activeTab === 'all-users') {
+        // Show all completed tasks for all users
+        q = query(collection(db, 'tasks'), where('status', '==', 'COMPLETED'));
+      } else if (activeTab === 'my-freelance') {
+        // Show only PT user's own freelance tasks
+        q = query(collection(db, 'tasks'), where('assignedTo', '==', user.uid));
+      } else {
+        // part-time tab - no tasks needed, only PT payments
+        setTasks([]);
+        setLoading(false);
+        return;
+      }
+    } else {
+      // Non-PT users only see their own tasks
+      q = query(collection(db, 'tasks'), where('assignedTo', '==', user.uid));
+    }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const userTasks = snapshot.docs.map(doc => ({
@@ -72,7 +87,7 @@ export default function PaymentView() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, activeTab]);
 
   // Fetch Part Time payments for PT users
   useEffect(() => {
@@ -274,27 +289,48 @@ export default function PaymentView() {
 
         {/* Tab Navigation */}
         <div className="mb-6">
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setActiveTab('freelance')}
-              className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 ${
-                activeTab === 'freelance'
-                  ? 'bg-gray-800 text-white shadow-md'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              Tugasan / Freelance
-            </button>
-            {user?.staffId?.startsWith('PT') && (
+          <div className="flex space-x-2 overflow-x-auto">
+            {user?.staffId?.startsWith('PT') ? (
+              // PT users get 3 tabs
+              <>
+                <button
+                  onClick={() => setActiveTab('all-users')}
+                  className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 whitespace-nowrap ${
+                    activeTab === 'all-users'
+                      ? 'bg-gray-800 text-white shadow-md'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  Semua Pengguna
+                </button>
+                <button
+                  onClick={() => setActiveTab('my-freelance')}
+                  className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 whitespace-nowrap ${
+                    activeTab === 'my-freelance'
+                      ? 'bg-gray-800 text-white shadow-md'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  Tugasan Saya
+                </button>
+                <button
+                  onClick={() => setActiveTab('part-time')}
+                  className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 whitespace-nowrap ${
+                    activeTab === 'part-time'
+                      ? 'bg-gray-800 text-white shadow-md'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  Bayaran Part Time
+                </button>
+              </>
+            ) : (
+              // Non-PT users get only 1 tab
               <button
-                onClick={() => setActiveTab('parttime')}
-                className={`px-6 py-3 rounded-2xl font-medium text-sm transition-all duration-200 ${
-                  activeTab === 'parttime'
-                    ? 'bg-gray-800 text-white shadow-md'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-                }`}
+                onClick={() => setActiveTab('my-freelance')}
+                className="px-6 py-3 rounded-2xl font-medium text-sm bg-gray-800 text-white shadow-md"
               >
-                Bayaran Part Time
+                Tugasan / Freelance Saya
               </button>
             )}
           </div>
@@ -355,12 +391,14 @@ export default function PaymentView() {
         </Card>
       </div>
 
-      {/* Payment History - Show for all users in freelance tab, hide for PT users in parttime tab */}
-      {activeTab === 'freelance' && (
+      {/* Task Payment History - Show for all-users and my-freelance tabs */}
+      {(activeTab === 'all-users' || activeTab === 'my-freelance') && (
         <Card>
           <CardHeader>
             <CardTitle>
-              {user?.staffId?.startsWith('PT') ? 'Sejarah Tugasan & Bayaran (Semua Pengguna)' : 'Sejarah Tugasan & Bayaran'}
+              {activeTab === 'all-users' ? 'Sejarah Tugasan & Bayaran (Semua Pengguna)' : 
+               activeTab === 'my-freelance' ? 'Sejarah Tugasan & Bayaran Saya' : 
+               'Sejarah Tugasan & Bayaran'}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -369,6 +407,7 @@ export default function PaymentView() {
                 <div className="text-center py-8 text-gray-500">
                   {filterPeriod === 'current' ? 'Tiada tugasan bulan ini' :
                    filterPeriod === 'custom' ? `Tiada tugasan untuk ${monthOptions.find(m => m.value === selectedMonth && m.year === selectedYear)?.label}` :
+                   activeTab === 'all-users' ? 'Tiada sejarah tugasan untuk semua pengguna' :
                    'Tiada sejarah tugasan yang boleh dibayar'}
                 </div>
               ) : (
@@ -376,7 +415,7 @@ export default function PaymentView() {
                   .sort((a, b) => (b.completedAt || b.submittedAt || b.createdAt).getTime() - 
                                  (a.completedAt || a.submittedAt || a.createdAt).getTime())
                   .map((task) => (
-                    <PaymentTaskCard key={task.id} task={task} />
+                    <PaymentTaskCard key={task.id} task={task} showUserInfo={activeTab === 'all-users'} />
                   ))
               )}
             </div>
@@ -385,7 +424,7 @@ export default function PaymentView() {
       )}
 
       {/* Part Time Payment Section */}
-      {user?.staffId?.startsWith('PT') && activeTab === 'parttime' && (
+      {user?.staffId?.startsWith('PT') && activeTab === 'part-time' && (
         <Card>
           <CardHeader>
             <CardTitle>Bayaran Part Time</CardTitle>
@@ -418,9 +457,10 @@ export default function PaymentView() {
 
 interface PaymentTaskCardProps {
   task: Task;
+  showUserInfo?: boolean;
 }
 
-function PaymentTaskCard({ task }: PaymentTaskCardProps) {
+function PaymentTaskCard({ task, showUserInfo = false }: PaymentTaskCardProps) {
   const getPaymentStatusColor = (status: TaskPaymentStatus) => {
     switch (status) {
       case TaskPaymentStatus.COMPLETED:
@@ -454,6 +494,11 @@ function PaymentTaskCard({ task }: PaymentTaskCardProps) {
           <div className="min-w-0 flex-1 mr-4">
             <h3 className="font-semibold text-gray-900 break-words">{task.name}</h3>
             <p className="text-sm text-gray-600 font-mono break-all">ID: {task.id}</p>
+            {showUserInfo && task.assignedToName && (
+              <p className="text-sm text-blue-600 font-medium mt-1">
+                👤 {task.assignedToName} ({task.assignedToStaffId})
+              </p>
+            )}
           </div>
           <div className="text-right">
             <div className="text-lg font-bold">{formatCurrency(task.amount)}</div>
