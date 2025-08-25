@@ -211,35 +211,37 @@ export default function PaymentView() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment & Gaji</h1>
-            <p className="text-gray-600">Pantau pendapatan dan status bayaran anda</p>
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">Payment & Gaji</h1>
+            <p className="text-sm sm:text-base text-gray-600">Pantau pendapatan dan status bayaran anda</p>
           </div>
           <Button
             variant="outline"
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-xs sm:text-sm px-3 py-2 whitespace-nowrap"
           >
-            <Filter className="h-4 w-4" />
-            Filter Tempoh
-            <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+            <Filter className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Filter Tempoh</span>
+            <span className="sm:hidden">Filter</span>
+            <ChevronDown className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
           </Button>
         </div>
 
         {/* Filter Controls */}
         {showFilters && (
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-wrap gap-4 items-center">
-                <div className="flex gap-2">
+          <Card className="mb-4 sm:mb-6">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4 sm:items-center">
+                <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0">
                   <Button
                     variant={filterPeriod === 'current' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilterPeriod('current')}
+                    className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
                   >
                     Bulan Ini
                   </Button>
@@ -247,6 +249,7 @@ export default function PaymentView() {
                     variant={filterPeriod === 'all' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilterPeriod('all')}
+                    className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
                   >
                     Semua
                   </Button>
@@ -254,13 +257,14 @@ export default function PaymentView() {
                     variant={filterPeriod === 'custom' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilterPeriod('custom')}
+                    className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
                   >
                     Pilih Bulan
                   </Button>
                 </div>
 
                 {filterPeriod === 'custom' && (
-                  <div className="flex gap-2">
+                  <div className="w-full sm:w-auto">
                     <select
                       value={`${selectedMonth}-${selectedYear}`}
                       onChange={(e) => {
@@ -268,7 +272,7 @@ export default function PaymentView() {
                         setSelectedMonth(month);
                         setSelectedYear(year);
                       }}
-                      className="px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+                      className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-xs sm:text-sm bg-white"
                     >
                       {monthOptions.map((option) => (
                         <option key={`${option.value}-${option.year}`} value={`${option.value}-${option.year}`}>
@@ -279,7 +283,7 @@ export default function PaymentView() {
                   </div>
                 )}
 
-                <div className="text-sm text-gray-600">
+                <div className="text-xs sm:text-sm text-gray-600 w-full sm:w-auto">
                   Menunjukkan: {filteredCompleted.length + filteredPending.length} tugasan
                 </div>
               </div>
@@ -342,7 +346,7 @@ export default function PaymentView() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Pendapatan</CardTitle>
@@ -493,21 +497,21 @@ function PaymentTaskCard({ task, showUserInfo = false }: PaymentTaskCardProps) {
 
   return (
     <Card className="border-l-4 border-l-blue-500">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="min-w-0 flex-1 mr-4">
-            <h3 className="font-semibold text-gray-900 break-words">{task.name}</h3>
-            <p className="text-sm text-gray-600 font-mono break-all">ID: {task.id}</p>
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-semibold text-gray-900 break-words text-sm sm:text-base">{task.name}</h3>
+            <p className="text-xs sm:text-sm text-gray-600 font-mono break-all">ID: {task.id}</p>
             {showUserInfo && task.assignedToName && (
-              <p className="text-sm text-blue-600 font-medium mt-1">
+              <p className="text-xs sm:text-sm text-blue-600 font-medium mt-1">
                 👤 {task.assignedToName} ({task.assignedToStaffId})
               </p>
             )}
           </div>
-          <div className="text-right">
-            <div className="text-lg font-bold">{formatCurrency(task.amount)}</div>
+          <div className="text-left sm:text-right flex-shrink-0">
+            <div className="text-lg sm:text-xl font-bold">{formatCurrency(task.amount)}</div>
             {task.originalAmount && task.originalAmount !== task.amount && (
-              <div className="text-sm mb-2">
+              <div className="text-xs sm:text-sm mb-2">
                 Asal: <span className="line-through">{formatCurrency(task.originalAmount)}</span>
                 <span className={`ml-2 px-2 py-1 rounded text-xs ${
                   task.amount > task.originalAmount 
@@ -518,11 +522,11 @@ function PaymentTaskCard({ task, showUserInfo = false }: PaymentTaskCardProps) {
                 </span>
               </div>
             )}
-            <div className="flex space-x-2">
-              <Badge className={getTaskStatusColor(task.status)}>
+            <div className="flex flex-wrap gap-2 sm:justify-end">
+              <Badge className={`${getTaskStatusColor(task.status)} text-xs`}>
                 {task.status === TaskStatus.COMPLETED ? 'Selesai' : task.status}
               </Badge>
-              <Badge className={getPaymentStatusColor(task.paymentStatus)}>
+              <Badge className={`${getPaymentStatusColor(task.paymentStatus)} text-xs`}>
                 {task.paymentStatus === TaskPaymentStatus.PENDING ? 'Menunggu Kelulusan' :
                  task.paymentStatus === TaskPaymentStatus.COMPLETED ? 'Bayaran Selesai' :
                  task.paymentStatus === TaskPaymentStatus.APPROVED ? 'Diluluskan' :
@@ -533,17 +537,17 @@ function PaymentTaskCard({ task, showUserInfo = false }: PaymentTaskCardProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
           <div className="flex items-center">
-            <Calendar className="h-4 w-4 mr-2" />
-            <span>
+            <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+            <span className="truncate">
               {task.status === TaskStatus.COMPLETED ? 'Selesai' : 'Diserahkan'}: {' '}
               {formatDate(task.completedAt || task.submittedAt || task.createdAt)}
             </span>
           </div>
           <div className="flex items-center">
-            <FileText className="h-4 w-4 mr-2" />
-            <span>Deadline: {formatDate(task.deadline)}</span>
+            <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+            <span className="truncate">Deadline: {formatDate(task.deadline)}</span>
           </div>
         </div>
 
@@ -578,37 +582,37 @@ function PartTimePaymentCard({ payment }: PartTimePaymentCardProps) {
 
   return (
     <Card className="border-l-4 border-l-green-500">
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="min-w-0 flex-1 mr-4">
-            <h3 className="font-semibold text-gray-900 mb-2">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-semibold text-gray-900 mb-2 text-sm sm:text-base">
               Bayaran {getMonthName(payment.month)} {payment.year}
             </h3>
-            <p className="text-sm text-gray-600 mb-2">{payment.description}</p>
-            <p className="text-sm text-gray-500 font-mono break-all">ID: {payment.id}</p>
+            <p className="text-xs sm:text-sm text-gray-600 mb-2">{payment.description}</p>
+            <p className="text-xs sm:text-sm text-gray-500 font-mono break-all">ID: {payment.id}</p>
           </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-green-600">{formatCurrency(payment.amount)}</div>
-            <Badge className="bg-green-100 text-green-800 mt-2">
+          <div className="text-left sm:text-right flex-shrink-0">
+            <div className="text-xl sm:text-2xl font-bold text-green-600">{formatCurrency(payment.amount)}</div>
+            <Badge className="bg-green-100 text-green-800 mt-2 text-xs">
               Bayaran Selesai
             </Badge>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
           <div className="flex items-center">
-            <Calendar className="h-4 w-4 mr-2" />
-            <span>Direkod: {formatDate(payment.createdAt)}</span>
+            <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+            <span className="truncate">Direkod: {formatDate(payment.createdAt)}</span>
           </div>
           <div className="flex items-center">
-            <FileText className="h-4 w-4 mr-2" />
-            <span>Oleh: {payment.createdByName}</span>
+            <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
+            <span className="truncate">Oleh: {payment.createdByName}</span>
           </div>
         </div>
 
         <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center">
-          <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-          <span className="text-sm text-green-800">Bayaran telah direkodkan dalam sistem</span>
+          <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 mr-2 flex-shrink-0" />
+          <span className="text-xs sm:text-sm text-green-800">Bayaran telah direkodkan dalam sistem</span>
         </div>
       </CardContent>
     </Card>
