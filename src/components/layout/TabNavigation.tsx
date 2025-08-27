@@ -90,8 +90,8 @@ export default function TabNavigation() {
     }
   };
 
-  // Check if user needs approval (not admin and not approved)
-  if (user && !user.isAdmin && !user.isApproved) {
+  // Check if user needs approval (not admin and not approved) or is rejected
+  if (user && !user.isAdmin && (!user.isApproved || user.isRejected)) {
     return <PendingApprovalView />;
   }
 
