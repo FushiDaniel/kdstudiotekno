@@ -247,51 +247,51 @@ function UserDetailCard({ user, onCopy }: UserDetailCardProps) {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-              {user.profileImageUrl ? (
-                <img
-                  src={user.profileImageUrl}
-                  alt={user.fullname}
-                  className="w-12 h-12 rounded-full object-cover"
-                />
-              ) : (
-                <Users className="h-6 w-6 text-gray-500" />
-              )}
-            </div>
+        <div className="flex items-start space-x-4">
+          <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+            {user.profileImageUrl ? (
+              <img
+                src={user.profileImageUrl}
+                alt={user.fullname}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+            ) : (
+              <Users className="h-6 w-6 text-gray-500" />
+            )}
+          </div>
+          
+          <div className="flex-1 min-w-0 space-y-2">
             <div>
-              <CardTitle className="text-lg text-gray-900 flex items-center gap-2">
-                {user.fullname}
-                {user.isAdmin && (
-                  <Badge className="bg-purple-100 text-purple-800 text-xs">
-                    Admin
-                  </Badge>
-                )}
-                {!user.isApproved && !user.isAdmin && (
-                  <Badge variant="destructive" className="text-xs">
-                    Belum Diluluskan
-                  </Badge>
-                )}
-                {user.isApproved && (
-                  <Badge className="bg-green-100 text-green-800 text-xs">
-                    Diluluskan
-                  </Badge>
-                )}
-              </CardTitle>
+              <CardTitle className="text-lg text-gray-900">{user.fullname}</CardTitle>
               <p className="text-sm text-gray-500">{user.email}</p>
             </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge className={employmentBadge.color}>
-              {employmentBadge.text}
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              {user.staffId}
-            </Badge>
-            <Badge className={getStatusColor(user.availabilityStatus)}>
-              {getStatusText(user.availabilityStatus)}
-            </Badge>
+            
+            <div className="flex flex-wrap gap-1">
+              <Badge variant="outline" className="text-xs">
+                {user.staffId}
+              </Badge>
+              <Badge className={employmentBadge.color}>
+                {employmentBadge.text}
+              </Badge>
+              <Badge className={getStatusColor(user.availabilityStatus)}>
+                {getStatusText(user.availabilityStatus)}
+              </Badge>
+              {user.isAdmin && (
+                <Badge className="bg-purple-100 text-purple-800 text-xs">
+                  Admin
+                </Badge>
+              )}
+              {!user.isApproved && !user.isAdmin && (
+                <Badge variant="destructive" className="text-xs">
+                  Belum Diluluskan
+                </Badge>
+              )}
+              {user.isApproved && (
+                <Badge className="bg-green-100 text-green-800 text-xs">
+                  Diluluskan
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>
