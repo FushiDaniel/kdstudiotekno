@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from '@/contexts/AuthContext';
-import { Clock, Mail, Phone, CheckCircle, LogOut, Building, CreditCard, User, Save, AlertCircle } from 'lucide-react';
+import { Clock, Mail, Phone, CheckCircle, LogOut, Building, CreditCard, User, Save, AlertCircle, XCircle } from 'lucide-react';
 import { doc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -79,6 +79,136 @@ export default function PendingApprovalView() {
       setIsSubmitting(false);
     }
   };
+
+  // Check if user is rejected
+  if (user?.isRejected) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-2xl">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <XCircle className="h-8 w-8 text-red-600" />
+            </div>
+            <CardTitle className="text-2xl font-bold text-red-900">
+              Permohonan Ditolak
+            </CardTitle>
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            <div className="text-center text-gray-600">
+              <p className="text-lg mb-4 text-red-800">
+                Maaf, permohonan pendaftaran anda telah ditolak.
+              </p>
+            </div>
+
+            {/* User Information */}
+            <div className="bg-gray-50 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Maklumat Akaun Anda
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mr-4">
+                    {user?.profileImageUrl ? (
+                      <img
+                        src={user.profileImageUrl}
+                        alt={user.fullname}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-gray-500 font-semibold">
+                        {user?.fullname?.charAt(0)?.toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{user?.fullname}</p>
+                    <p className="text-sm text-gray-500">Staff ID: {user?.staffId}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center text-sm text-gray-600">
+                  <Mail className="h-4 w-4 mr-2" />
+                  {user?.email}
+                </div>
+                
+                {user?.phoneNumber && (
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Phone className="h-4 w-4 mr-2" />
+                    {user.phoneNumber}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Rejection Details */}
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
+                <XCircle className="h-5 w-5 mr-2" />
+                Sebab Penolakan
+              </h3>
+              
+              {user?.rejectionReason && (
+                <div className="mb-4 p-3 bg-white border border-red-100 rounded-lg">
+                  <p className="text-sm text-red-800 font-medium mb-1">Sebab:</p>
+                  <p className="text-sm text-red-700">{user.rejectionReason}</p>
+                </div>
+              )}
+
+              {user?.rejectedAt && (
+                <div className="mb-4 text-sm text-red-600">
+                  <p><strong>Tarikh ditolak:</strong> {new Date(user.rejectedAt).toLocaleDateString('ms-MY')}</p>
+                </div>
+              )}
+
+              {user?.rejectedByName && (
+                <div className="text-sm text-red-600">
+                  <p><strong>Ditolak oleh:</strong> {user.rejectedByName} {user?.rejectedByStaffId && `(${user.rejectedByStaffId})`}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Contact Support */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                <Mail className="h-5 w-5 mr-2" />
+                Perlukan Bantuan?
+              </h3>
+              <div className="space-y-3 text-blue-800">
+                <p className="text-sm">
+                  Jika anda mempunyai sebarang pertanyaan mengenai penolakan ini atau ingin mengajukan rayuan, sila hubungi admin kami.
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Mail className="h-4 w-4 text-blue-600" />
+                  <a 
+                    href="mailto:hubungi@kerisdigital.com" 
+                    className="text-blue-600 hover:underline font-medium"
+                  >
+                    hubungi@kerisdigital.com
+                  </a>
+                </div>
+                <p className="text-xs text-blue-600">
+                  Sila sertakan Staff ID anda ({user?.staffId}) dalam email untuk memudahkan proses sokongan.
+                </p>
+              </div>
+            </div>
+
+            {/* Sign Out Button */}
+            <div className="text-center pt-4 border-t">
+              <Button 
+                variant="outline" 
+                onClick={handleSignOut}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Log Keluar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

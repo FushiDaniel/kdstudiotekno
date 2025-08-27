@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { User } from '@/types';
 import { collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Search, Users, Phone, Mail, MapPin, Clock, Building, CreditCard, Copy } from 'lucide-react';
+import { Search, Users, Phone, Mail, MapPin, Clock, Building, CreditCard, Copy, XCircle, User as UserIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/utils';
 
@@ -151,7 +151,7 @@ export default function AdminUserListView() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
         <Card className="border border-gray-200 bg-white">
           <CardContent className="p-4">
             <div className="flex items-center">
@@ -207,7 +207,23 @@ export default function AdminUserListView() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Belum Diluluskan</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => !u.isApproved && !u.isAdmin).length}
+                  {users.filter(u => !u.isApproved && !u.isAdmin && !u.isRejected).length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-gray-200 bg-white">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center mr-3">
+                <XCircle className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Ditolak</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {users.filter(u => u.isRejected).length}
                 </p>
               </div>
             </div>
@@ -281,12 +297,17 @@ function UserDetailCard({ user, onCopy }: UserDetailCardProps) {
                   Admin
                 </Badge>
               )}
-              {!user.isApproved && !user.isAdmin && (
+              {user.isRejected && (
+                <Badge className="bg-red-100 text-red-800 text-xs">
+                  Ditolak
+                </Badge>
+              )}
+              {!user.isApproved && !user.isAdmin && !user.isRejected && (
                 <Badge variant="destructive" className="text-xs">
                   Belum Diluluskan
                 </Badge>
               )}
-              {user.isApproved && (
+              {user.isApproved && !user.isRejected && (
                 <Badge className="bg-green-100 text-green-800 text-xs">
                   Diluluskan
                 </Badge>
@@ -405,6 +426,39 @@ function UserDetailCard({ user, onCopy }: UserDetailCardProps) {
                       <Copy className="h-3 w-3" />
                     </button>
                   </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Rejection Information */}
+        {user.isRejected && (
+          <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+            <h4 className="font-medium text-red-700 mb-2 flex items-center">
+              <XCircle className="h-4 w-4 mr-2" />
+              Maklumat Penolakan
+            </h4>
+            <div className="space-y-2">
+              {user.rejectionReason && (
+                <div className="text-sm text-red-800">
+                  <p className="font-medium mb-1">Sebab penolakan:</p>
+                  <p className="bg-white p-2 rounded border border-red-100">{user.rejectionReason}</p>
+                </div>
+              )}
+              {user.rejectedAt && (
+                <div className="flex items-center text-sm text-red-600">
+                  <Clock className="h-4 w-4 mr-2" />
+                  <span>Ditolak pada: {formatDate(user.rejectedAt)}</span>
+                </div>
+              )}
+              {user.rejectedByName && (
+                <div className="flex items-center text-sm text-red-600">
+                  <UserIcon className="h-4 w-4 mr-2" />
+                  <span>
+                    Ditolak oleh: {user.rejectedByName}
+                    {user.rejectedByStaffId && ` (${user.rejectedByStaffId})`}
+                  </span>
                 </div>
               )}
             </div>
