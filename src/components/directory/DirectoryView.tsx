@@ -13,6 +13,7 @@ import { Search, Users, Phone, Mail, MapPin, X, Building, CreditCard, UserCheck,
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/utils';
 import SkillManagement from '@/components/admin/SkillManagement';
+import AdminUserListView from '@/components/admin/AdminUserListView';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -56,7 +57,7 @@ export default function DirectoryView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<'directory' | 'pending' | 'approved' | 'manage-skills'>('directory');
+  const [activeTab, setActiveTab] = useState<'directory' | 'pending' | 'approved' | 'manage-skills' | 'admin-users'>('directory');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
 
@@ -91,11 +92,11 @@ export default function DirectoryView() {
       setLoading(false);
     });
 
-    // Listen for pending users (only for admins)
+    // Listen for pending users (for admins and part-time users)
     let pendingUnsubscribe = () => {};
     let approvedUnsubscribe = () => {};
     
-    if (currentUser?.isAdmin) {
+    if (currentUser?.isAdmin || currentUser?.staffId?.startsWith('PT')) {
       const pendingQuery = query(
         collection(db, 'users'),
         where('isApproved', '==', false)
@@ -147,7 +148,7 @@ export default function DirectoryView() {
       approvedUnsubscribe();
       userSkillsUnsubscribe();
     };
-  }, [currentUser?.isAdmin]);
+  }, [currentUser?.isAdmin, currentUser?.staffId]);
 
   const handleApproveUser = async (userId: string) => {
     setIsUpdating(userId);
@@ -259,7 +260,7 @@ export default function DirectoryView() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      {activeTab !== 'manage-skills' && (
+      {activeTab !== 'manage-skills' && activeTab !== 'admin-users' && (
         <div className="text-center mb-12">
           <div className="max-w-2xl mx-auto">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -276,66 +277,78 @@ export default function DirectoryView() {
         </div>
       )}
 
-      {/* Tab Navigation - Show only for admins */}
-      {currentUser?.isAdmin && (
+      {/* Tab Navigation - Show for admins and part-time users (PT prefix) */}
+      {(currentUser?.isAdmin || currentUser?.staffId?.startsWith('PT')) && (
         <div className="mb-6">
-          <div className="flex justify-center">
-            <div className="border border-gray-200 rounded-lg p-1 inline-flex bg-white overflow-x-auto">
-              <Button
-                variant={activeTab === 'directory' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('directory')}
-                className={`flex items-center gap-1 px-3 py-2 rounded-md transition-all text-sm whitespace-nowrap ${
-                  activeTab === 'directory' 
-                    ? 'bg-black text-white' 
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          <div className="flex space-x-1 sm:space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+            <button
+              onClick={() => setActiveTab('directory')}
+              className={`px-2 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 min-w-0 flex items-center gap-1 ${
+                activeTab === 'directory'
+                  ? 'bg-gray-800 text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="sm:hidden">Dir</span>
+              <span className="hidden sm:inline">Direktori ({users.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('pending')}
+              className={`px-2 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 min-w-0 flex items-center gap-1 ${
+                activeTab === 'pending'
+                  ? 'bg-gray-800 text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="sm:hidden">Tunggu</span>
+              <span className="hidden sm:inline">Permohonan ({pendingUsers.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('approved')}
+              className={`px-2 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 min-w-0 flex items-center gap-1 ${
+                activeTab === 'approved'
+                  ? 'bg-gray-800 text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <UserCheck className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="sm:hidden">Lulus</span>
+              <span className="hidden sm:inline">Diluluskan ({approvedUsers.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('manage-skills')}
+              className={`px-2 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 min-w-0 flex items-center gap-1 ${
+                activeTab === 'manage-skills'
+                  ? 'bg-gray-800 text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <Award className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="sm:hidden">Skill</span>
+              <span className="hidden sm:inline">Kemahiran</span>
+            </button>
+            {currentUser?.isAdmin && (
+              <button
+                onClick={() => setActiveTab('admin-users')}
+                className={`px-2 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-2xl font-medium text-xs sm:text-sm transition-all duration-200 whitespace-nowrap flex-shrink-0 min-w-0 flex items-center gap-1 ${
+                  activeTab === 'admin-users'
+                    ? 'bg-gray-800 text-white shadow-md'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                 }`}
               >
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">Direktori</span> ({users.length})
-              </Button>
-              <Button
-                variant={activeTab === 'pending' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('pending')}
-                className={`flex items-center gap-1 px-3 py-2 rounded-md transition-all text-sm whitespace-nowrap ${
-                  activeTab === 'pending' 
-                    ? 'bg-black text-white' 
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                <Clock className="h-4 w-4" />
-                <span className="hidden sm:inline">Permohonan</span> ({pendingUsers.length})
-              </Button>
-              <Button
-                variant={activeTab === 'approved' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('approved')}
-                className={`flex items-center gap-1 px-3 py-2 rounded-md transition-all text-sm whitespace-nowrap ${
-                  activeTab === 'approved' 
-                    ? 'bg-black text-white' 
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                <UserCheck className="h-4 w-4" />
-                <span className="hidden sm:inline">Diluluskan</span> ({approvedUsers.length})
-              </Button>
-              <Button
-                variant={activeTab === 'manage-skills' ? 'default' : 'ghost'}
-                onClick={() => setActiveTab('manage-skills')}
-                className={`flex items-center gap-1 px-3 py-2 rounded-md transition-all text-sm whitespace-nowrap ${
-                  activeTab === 'manage-skills' 
-                    ? 'bg-black text-white' 
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                }`}
-              >
-                <Award className="h-4 w-4" />
-                <span className="hidden sm:inline">Kemahiran</span>
-              </Button>
-            </div>
+                <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="sm:hidden">Admin</span>
+                <span className="hidden sm:inline">Semua Pengguna</span>
+              </button>
+            )}
           </div>
         </div>
       )}
 
       {/* Search */}
-      {activeTab !== 'manage-skills' && (
+      {activeTab !== 'manage-skills' && activeTab !== 'admin-users' && (
         <div className="mb-6">
           <div className="max-w-md mx-auto">
             <div className="relative">
@@ -407,7 +420,7 @@ export default function DirectoryView() {
       )}
 
       {/* User Grid */}
-      {activeTab !== 'manage-skills' && (
+      {activeTab !== 'manage-skills' && activeTab !== 'admin-users' && (
         <div className={activeTab === 'directory' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4" : "space-y-6"}>
           {filteredUsers.length === 0 ? (
             <div className={activeTab === 'directory' ? "col-span-full text-center py-8" : "text-center py-8"}>
@@ -618,6 +631,9 @@ export default function DirectoryView() {
       
       {/* Skill Management View */}
       {activeTab === 'manage-skills' && <SkillManagement />}
+      
+      {/* Admin User List View */}
+      {activeTab === 'admin-users' && <AdminUserListView />}
     </div>
   );
 }
