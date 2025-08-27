@@ -646,6 +646,19 @@ interface UserCardProps {
 }
 
 function UserCard({ user, userSkills, onClick, showDetails }: UserCardProps) {
+  const getEmploymentTypeBadge = (type: string) => {
+    switch (type) {
+      case 'FT':
+        return { text: 'Sepenuh Masa', color: 'bg-green-100 text-green-800' };
+      case 'PT':
+        return { text: 'Separuh Masa', color: 'bg-blue-100 text-blue-800' };
+      case 'FL':
+        return { text: 'Bebas', color: 'bg-gray-100 text-gray-800' };
+      default:
+        return { text: type, color: 'bg-gray-100 text-gray-800' };
+    }
+  };
+
   return (
     <Card 
       className="group hover:shadow-md transition-all duration-200 cursor-pointer border border-gray-200 hover:border-gray-300 bg-white" 
@@ -653,49 +666,56 @@ function UserCard({ user, userSkills, onClick, showDetails }: UserCardProps) {
     >
       <CardContent className="p-4">
         {/* Profile Section */}
-        <div className="flex items-center space-x-3 mb-3">
+        <div className="flex items-start space-x-3 mb-3">
           {/* Profile Image */}
           {user.profileImageUrl ? (
             <img 
               src={user.profileImageUrl} 
               alt={user.fullname}
-              className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+              className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 flex-shrink-0"
             />
           ) : (
-            <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center border-2 border-gray-200">
+            <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center border-2 border-gray-200 flex-shrink-0">
               <span className="text-white font-bold text-lg">
                 {user.fullname?.charAt(0) || 'U'}
               </span>
             </div>
           )}
           
-          {/* Basic Info */}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm">
-              {user.fullname || 'Nama Tidak Disetkan'}
-            </h3>
-            <p className="text-gray-600 text-xs mb-1">{user.staffId}</p>
-            <Badge className={`${getStatusColor(user.availabilityStatus)} text-xs`} variant="secondary">
-              {getStatusText(user.availabilityStatus)}
-            </Badge>
+          {/* Basic Info and Contact */}
+          <div className="flex-1 min-w-0 space-y-2">
+            {/* Name and Email */}
+            <div>
+              <h3 className="font-semibold text-gray-900 text-sm">
+                {user.fullname || 'Nama Tidak Disetkan'}
+              </h3>
+              {user.email && (
+                <div className="flex items-center text-gray-600 mt-1">
+                  <Mail className="h-3 w-3 mr-2 text-gray-400 flex-shrink-0" />
+                  <span className="text-xs truncate">{user.email}</span>
+                </div>
+              )}
+              {user.phoneNumber && (
+                <div className="flex items-center text-gray-600 mt-1">
+                  <Phone className="h-3 w-3 mr-2 text-gray-400 flex-shrink-0" />
+                  <span className="text-xs">{user.phoneNumber}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Badges Section */}
+            <div className="flex flex-wrap gap-1">
+              <Badge variant="outline" className="text-xs">
+                {user.staffId}
+              </Badge>
+              <Badge className={`${getEmploymentTypeBadge(user.employmentType).color} text-xs`} variant="secondary">
+                {getEmploymentTypeBadge(user.employmentType).text}
+              </Badge>
+              <Badge className={`${getStatusColor(user.availabilityStatus)} text-xs`} variant="secondary">
+                {getStatusText(user.availabilityStatus)}
+              </Badge>
+            </div>
           </div>
-        </div>
-
-        {/* Contact Info */}
-        <div className="space-y-2 mb-3">
-          {user.email && (
-            <div className="flex items-center text-gray-600">
-              <Mail className="h-3 w-3 mr-2 text-gray-400" />
-              <span className="text-xs truncate">{user.email}</span>
-            </div>
-          )}
-          
-          {user.phoneNumber && (
-            <div className="flex items-center text-gray-600">
-              <Phone className="h-3 w-3 mr-2 text-gray-400" />
-              <span className="text-xs">{user.phoneNumber}</span>
-            </div>
-          )}
         </div>
 
         {/* Bio */}
