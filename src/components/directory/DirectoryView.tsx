@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/utils';
 import SkillManagement from '@/components/admin/SkillManagement';
 import AdminUserListView from '@/components/admin/AdminUserListView';
+import RejectUserDialog from '@/components/admin/RejectUserDialog';
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -59,6 +60,7 @@ export default function DirectoryView() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<'directory' | 'pending' | 'approved' | 'manage-skills' | 'admin-users'>('directory');
   const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const [rejectionDialog, setRejectionDialog] = useState<{ isOpen: boolean; user: User | null }>({ isOpen: false, user: null });
   const { user: currentUser } = useAuth();
 
   useEffect(() => {
@@ -109,7 +111,8 @@ export default function DirectoryView() {
           updatedAt: doc.data().updatedAt?.toDate() || new Date()
         })) as User[];
         
-        const nonAdminUsers = users.filter(u => !u.isAdmin);
+        // Filter for non-admin users who are pending (not rejected)
+        const nonAdminUsers = users.filter(u => !u.isAdmin && !u.isRejected);
         setPendingUsers(nonAdminUsers);
       });
 
@@ -166,22 +169,45 @@ export default function DirectoryView() {
   };
 
   const handleRejectUser = async (userId: string) => {
-    if (!confirm('Adakah anda pasti ingin menolak pengguna ini? Tindakan ini tidak boleh dibatalkan.')) {
-      return;
+    const userToReject = pendingUsers.find(u => u.uid === userId);
+    if (userToReject) {
+      setRejectionDialog({ isOpen: true, user: userToReject });
     }
+  };
+
+  const handleConfirmRejection = async (reason: string) => {
+    if (!rejectionDialog.user) return;
     
-    setIsUpdating(userId);
+    setIsUpdating(rejectionDialog.user.uid);
     try {
-      await updateDoc(doc(db, 'users', userId), {
+      // Update user status with rejection reason
+      await updateDoc(doc(db, 'users', rejectionDialog.user.uid), {
         isApproved: false,
+        isRejected: true,
         rejectedAt: Timestamp.fromDate(new Date()),
+        rejectionReason: reason,
+        rejectedBy: currentUser?.uid,
+        rejectedByName: currentUser?.fullname,
+        rejectedByStaffId: currentUser?.staffId,
         updatedAt: Timestamp.fromDate(new Date())
       });
+
+      // Close dialog
+      setRejectionDialog({ isOpen: false, user: null });
+
+      // TODO: Send rejection email notification
+      // You can add email notification here if needed
     } catch (error) {
       console.error('Error rejecting user:', error);
       alert('Gagal menolak pengguna. Sila cuba lagi.');
     } finally {
       setIsUpdating(null);
+    }
+  };
+
+  const handleCloseRejectionDialog = () => {
+    if (!isUpdating) {
+      setRejectionDialog({ isOpen: false, user: null });
     }
   };
 
@@ -217,13 +243,15 @@ export default function DirectoryView() {
   const getCurrentUsers = () => {
     switch (activeTab) {
       case 'directory':
-        return users;
+        // Only show approved users and admins in the directory
+        return users.filter(user => user.isApproved || user.isAdmin);
       case 'pending':
         return pendingUsers;
       case 'approved':
         return approvedUsers;
       default:
-        return users;
+        // Only show approved users and admins by default
+        return users.filter(user => user.isApproved || user.isAdmin);
     }
   };
 
@@ -634,6 +662,17 @@ export default function DirectoryView() {
       
       {/* Admin User List View */}
       {activeTab === 'admin-users' && <AdminUserListView />}
+
+      {/* Rejection Dialog */}
+      {rejectionDialog.user && (
+        <RejectUserDialog
+          user={rejectionDialog.user}
+          isOpen={rejectionDialog.isOpen}
+          onClose={handleCloseRejectionDialog}
+          onConfirm={handleConfirmRejection}
+          isProcessing={isUpdating === rejectionDialog.user.uid}
+        />
+      )}
     </div>
   );
 }

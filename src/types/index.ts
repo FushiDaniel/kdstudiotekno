@@ -36,6 +36,12 @@ export interface User {
   photoURL?: string;
   isAdmin: boolean;
   isApproved: boolean;
+  isRejected?: boolean;
+  rejectedAt?: Date;
+  rejectionReason?: string;
+  rejectedBy?: string;
+  rejectedByName?: string;
+  rejectedByStaffId?: string;
   phoneNumber: string;
   bio: string;
   skills: string[];
