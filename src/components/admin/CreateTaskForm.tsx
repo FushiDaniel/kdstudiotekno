@@ -185,27 +185,29 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
           startDate: isDirectlyAssigned ? Timestamp.fromDate(now) : null
         };
 
+        console.log('About to create task with data:', newTask);
+        
         // Use the generated taskId as the document ID
         await setDoc(doc(db, 'tasks', taskId), newTask);
+        
+        console.log('Task created successfully, now sending notifications...');
 
         // Send notifications based on assignment type
         if (isDirectlyAssigned && assignedUser) {
           // If directly assigned, only notify the assigned user
           try {
-            const userQuery = query(collection(db, 'users'), where('uid', '==', assignedUser.uid));
-            const userSnapshot = await getDocs(userQuery);
-            const userDoc = userSnapshot.docs[0];
-            const userEmail = userDoc ? userDoc.data().email : null;
-            
-            if (userEmail) {
-              await notificationService.notifyTaskAssigned(
-                assignedUser.uid,
-                userEmail,
-                formData.name,
-                new Date(formData.deadline).toLocaleDateString('ms-MY'),
-                taskId
-              );
-            }
+            console.log('Sending notification to assigned user:', assignedUser);
+            // Temporarily disable notification to test task creation
+            // if (assignedUser.email) {
+            //   await notificationService.notifyTaskAssigned(
+            //     assignedUser.uid,
+            //     assignedUser.email,
+            //     formData.name,
+            //     new Date(formData.deadline).toLocaleDateString('ms-MY'),
+            //     taskId
+            //   );
+            // }
+            console.log('Notification skipped for testing');
           } catch (notificationError) {
             console.warn('Failed to send assignment notification:', notificationError);
           }

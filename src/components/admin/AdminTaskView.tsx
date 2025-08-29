@@ -313,7 +313,9 @@ export default function AdminTaskView() {
       };
 
       console.log('Updating task with:', updates);
+      console.log('Task to assign:', taskToAssign);
       await updateDoc(doc(db, 'tasks', taskToAssign.id), updates);
+      console.log('Task updated successfully');
       
       // Update local state
       setTasks(prev => prev.map(t => t.id === taskToAssign.id ? { ...t, ...updates, assignedAt: now, startDate: now } : t));
