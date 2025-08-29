@@ -293,7 +293,7 @@ export default function AdminTaskView() {
 
     setIsAssigning(true);
     try {
-      const assignedUser = users.find(u => u.uid === assignedUserId);
+      const assignedUser = users.find(u => u.staffId === assignedUserId);
       
       if (!assignedUser) {
         console.error('Selected user not found in users list');
@@ -304,7 +304,7 @@ export default function AdminTaskView() {
 
       const now = new Date();
       const updates = {
-        assignedTo: assignedUserId,
+        assignedTo: assignedUser.uid,
         assignedToName: assignedUser.fullname,
         assignedToStaffId: assignedUser.staffId,
         assignedAt: Timestamp.fromDate(now),
@@ -771,7 +771,7 @@ export default function AdminTaskView() {
                   >
                     <option value="">Pilih pengguna...</option>
                     {users.map(user => (
-                      <option key={user.uid} value={user.uid}>
+                      <option key={user.uid} value={user.staffId}>
                         {user.fullname} ({user.staffId}) - {user.employmentType}
                       </option>
                     ))}

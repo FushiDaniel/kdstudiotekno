@@ -164,7 +164,7 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
         const taskId = await generateTaskId();
         
         // Handle direct assignment
-        const assignedUser = assignToUser ? users.find(u => u.uid === assignToUser) : null;
+        const assignedUser = assignToUser ? users.find(u => u.staffId === assignToUser) : null;
         const isDirectlyAssigned = !!assignedUser;
         
         const newTask = {
@@ -410,13 +410,21 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
                 >
                   <option value="">Tidak tugaskan - biarkan terbuka untuk diambil</option>
                   {users.map(user => (
-                    <option key={user.uid} value={user.uid}>
+                    <option key={user.uid} value={user.staffId}>
                       {user.fullname} ({user.staffId}) - {user.employmentType}
                     </option>
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
                   Jika ditugaskan terus, hanya pengguna yang ditugaskan akan menerima pemberitahuan
+                </p>
+              </div>
+            )}
+
+            {!isEditMode && assignToUser && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p className="text-sm text-blue-800 font-medium">
+                  ✓ Pemberitahuan dimatikan - hanya pengguna yang ditugaskan akan menerima pemberitahuan
                 </p>
               </div>
             )}
