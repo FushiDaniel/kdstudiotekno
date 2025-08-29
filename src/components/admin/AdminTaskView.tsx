@@ -271,12 +271,37 @@ export default function AdminTaskView() {
   };
 
   const handleAssignTask = async () => {
-    if (!taskToAssign || !assignedUserId || !user) return;
+    console.log('handleAssignTask called', { taskToAssign, assignedUserId, user });
+    
+    if (!taskToAssign) {
+      console.error('No task to assign');
+      alert('Tiada tugasan untuk ditugaskan.');
+      return;
+    }
+    
+    if (!assignedUserId) {
+      console.error('No user selected');
+      alert('Sila pilih pengguna untuk ditugaskan.');
+      return;
+    }
+    
+    if (!user) {
+      console.error('No current user');
+      alert('Pengguna semasa tidak dijumpai.');
+      return;
+    }
 
     setIsAssigning(true);
     try {
       const assignedUser = users.find(u => u.uid === assignedUserId);
-      if (!assignedUser) return;
+      console.log('Found assigned user:', assignedUser);
+      
+      if (!assignedUser) {
+        console.error('Selected user not found in users list');
+        alert('Pengguna yang dipilih tidak dijumpai.');
+        setIsAssigning(false);
+        return;
+      }
 
       const now = new Date();
       const updates = {
@@ -288,6 +313,7 @@ export default function AdminTaskView() {
         startDate: Timestamp.fromDate(now)
       };
 
+      console.log('Updating task with:', updates);
       await updateDoc(doc(db, 'tasks', taskToAssign.id), updates);
       
       // Update local state
@@ -298,7 +324,8 @@ export default function AdminTaskView() {
       setTaskToAssign(null);
       setAssignedUserId('');
       
-      console.log(`Task assigned to ${assignedUser.fullname}`);
+      console.log(`Task assigned successfully to ${assignedUser.fullname}`);
+      alert(`Tugasan berjaya ditugaskan kepada ${assignedUser.fullname}`);
     } catch (error) {
       console.error('Error assigning task:', error);
       alert('Gagal menugaskan. Sila cuba lagi.');
@@ -762,7 +789,10 @@ export default function AdminTaskView() {
                     Batal
                   </Button>
                   <Button 
-                    onClick={handleAssignTask}
+                    onClick={() => {
+                      console.log('Tugaskan button clicked', { assignedUserId, isAssigning });
+                      handleAssignTask();
+                    }}
                     disabled={!assignedUserId || isAssigning}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                   >
@@ -952,7 +982,7 @@ function AdminTaskCard({ task, onViewDetail, onAssignTask, onEditTask, onDeleteT
             </>
           )}
           
-          {!task.assignedTo && task.status === TaskStatus.NOT_STARTED && (
+          {!task.assignedTo && (
             <Button 
               onClick={() => onAssignTask(task)}
               className="flex-1 min-w-[120px] bg-purple-600 hover:bg-purple-700 text-white"
