@@ -304,7 +304,7 @@ export default function AdminTaskView() {
 
       const now = new Date();
       const updates = {
-        assignedTo: assignedUser.uid,
+        assignedTo: assignedUser.uid || assignedUser.id,
         assignedToName: assignedUser.fullname,
         assignedToStaffId: assignedUser.staffId,
         assignedAt: Timestamp.fromDate(now),

@@ -182,7 +182,7 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
           createdByName: user.fullname,
           createdAt: Timestamp.fromDate(now),
           ...(isDirectlyAssigned && assignedUser ? {
-            assignedTo: assignedUser.uid,
+            assignedTo: assignedUser.uid || assignedUser.id,
             assignedToName: assignedUser.fullname,
             assignedToStaffId: assignedUser.staffId,
             assignedAt: Timestamp.fromDate(now),
@@ -209,15 +209,15 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
           try {
             console.log('Sending notification to assigned user:', assignedUser);
             // Temporarily disable notification to test task creation
-            // if (assignedUser.email) {
-            //   await notificationService.notifyTaskAssigned(
-            //     assignedUser.uid,
-            //     assignedUser.email,
-            //     formData.name,
-            //     new Date(formData.deadline).toLocaleDateString('ms-MY'),
-            //     taskId
-            //   );
-            // }
+            if (assignedUser.email) {
+              await notificationService.notifyTaskAssigned(
+                assignedUser.uid || assignedUser.id,
+                assignedUser.email,
+                formData.name,
+                new Date(formData.deadline).toLocaleDateString('ms-MY'),
+                taskId
+              );
+            }
             console.log('Notification skipped for testing');
           } catch (notificationError) {
             console.warn('Failed to send assignment notification:', notificationError);
