@@ -164,7 +164,10 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
         const taskId = await generateTaskId();
         
         // Handle direct assignment
+        console.log('assignToUser:', assignToUser);
+        console.log('users staffIds:', users.map(u => ({ staffId: u.staffId, uid: u.uid, fullname: u.fullname })));
         const assignedUser = assignToUser ? users.find(u => u.staffId === assignToUser) : null;
+        console.log('assignedUser found:', assignedUser);
         const isDirectlyAssigned = !!assignedUser;
         
         const newTask = {
@@ -178,11 +181,19 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
           createdBy: user.uid,
           createdByName: user.fullname,
           createdAt: Timestamp.fromDate(now),
-          assignedTo: assignedUser ? assignedUser.uid : null,
-          assignedToName: assignedUser ? assignedUser.fullname : null,
-          assignedToStaffId: assignedUser ? assignedUser.staffId : null,
-          assignedAt: isDirectlyAssigned ? Timestamp.fromDate(now) : null,
-          startDate: isDirectlyAssigned ? Timestamp.fromDate(now) : null
+          ...(isDirectlyAssigned && assignedUser ? {
+            assignedTo: assignedUser.uid,
+            assignedToName: assignedUser.fullname,
+            assignedToStaffId: assignedUser.staffId,
+            assignedAt: Timestamp.fromDate(now),
+            startDate: Timestamp.fromDate(now)
+          } : {
+            assignedTo: null,
+            assignedToName: null,
+            assignedToStaffId: null,
+            assignedAt: null,
+            startDate: null
+          })
         };
 
         console.log('About to create task with data:', newTask);
