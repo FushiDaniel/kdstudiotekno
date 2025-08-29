@@ -171,7 +171,7 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
           name: formData.name,
           description: formData.description,
           amount: parseFloat(formData.amount),
-          deadline: new Date(formData.deadline),
+          deadline: Timestamp.fromDate(new Date(formData.deadline)),
           skills: formData.skills,
           status: isDirectlyAssigned ? TaskStatus.IN_PROGRESS : TaskStatus.NOT_STARTED,
           paymentStatus: TaskPaymentStatus.NOT_STARTED,
@@ -256,7 +256,7 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
       onClose();
     } catch (error) {
       console.error(`Error ${isEditMode ? 'updating' : 'creating'} task:`, error);
-      alert(`Failed to ${isEditMode ? 'update' : 'create'} task. Please try again.`);
+      alert(`Gagal ${isEditMode ? 'mengemaskini' : 'mencipta'} tugasan. Sila cuba lagi.`);
     } finally {
       setIsCreating(false);
     }
