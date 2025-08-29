@@ -314,6 +314,21 @@ export default function AdminTaskView() {
 
       await updateDoc(doc(db, 'tasks', taskToAssign.id), updates);
       
+      // Send notification to the assigned user
+      try {
+        if (assignedUser.email) {
+          await notificationService.notifyTaskAssigned(
+            assignedUser.uid || (assignedUser as any).id,
+            assignedUser.email,
+            taskToAssign.name,
+            taskToAssign.deadline ? (taskToAssign.deadline instanceof Date ? taskToAssign.deadline.toLocaleDateString('ms-MY') : new Date((taskToAssign.deadline as any).toDate()).toLocaleDateString('ms-MY')) : 'Tiada',
+            taskToAssign.id
+          );
+        }
+      } catch (notificationError) {
+        console.warn('Failed to send assignment notification:', notificationError);
+      }
+      
       // Update local state
       setTasks(prev => prev.map(t => t.id === taskToAssign.id ? { ...t, ...updates, assignedAt: now, startDate: now } : t));
       

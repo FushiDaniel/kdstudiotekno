@@ -95,8 +95,9 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
 
       await updateDoc(doc(db, 'tasks', task.id), updates);
       
-      // Get all admin users for notification
+      // Get all admin users and PT users for notification
       try {
+        // Get admin users
         const adminQuery = query(collection(db, 'users'), where('isAdmin', '==', true));
         const adminSnapshot = await getDocs(adminQuery);
         const adminEmails = adminSnapshot.docs.map(doc => ({
@@ -104,12 +105,26 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
           email: doc.data().email
         }));
 
-        // Notify admins that task needs review
+        // Get Part Time (PT) users
+        const allUsersQuery = query(collection(db, 'users'), where('isApproved', '==', true));
+        const allUsersSnapshot = await getDocs(allUsersQuery);
+        const ptUserEmails = allUsersSnapshot.docs
+          .map(doc => ({ ...doc.data(), id: doc.id }))
+          .filter((userData: any) => userData.staffId?.startsWith('PT'))
+          .map((userData: any) => ({
+            userId: userData.id,
+            email: userData.email
+          }));
+
+        // Combine admin and PT user emails
+        const notificationTargets = [...adminEmails, ...ptUserEmails];
+
+        // Notify admins and PT users that task needs review
         await notificationService.notifyTaskNeedsReview(
           task.name,
           user.fullname,
           task.id,
-          adminEmails
+          notificationTargets
         );
       } catch (notificationError) {
         console.error('Error sending notification to admins:', notificationError);
