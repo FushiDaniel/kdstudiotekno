@@ -294,7 +294,6 @@ export default function AdminTaskView() {
     setIsAssigning(true);
     try {
       const assignedUser = users.find(u => u.uid === assignedUserId);
-      console.log('Found assigned user:', assignedUser);
       
       if (!assignedUser) {
         console.error('Selected user not found in users list');

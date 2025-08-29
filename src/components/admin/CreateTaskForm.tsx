@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Task, TaskStatus, TaskPaymentStatus, Skill, User } from '@/types';
 import { collection, addDoc, Timestamp, getDocs, query, setDoc, doc, updateDoc, onSnapshot, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { firebaseCache } from '@/lib/firebase-cache';
 import { X, Plus } from 'lucide-react';
 import { notificationService } from '@/lib/notifications';
 
@@ -32,6 +33,8 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
   const [notificationType, setNotificationType] = useState<'all' | 'skilled'>('all');
   const [sendNotification, setSendNotification] = useState(true);
+  const [users, setUsers] = useState<User[]>([]);
+  const [assignToUser, setAssignToUser] = useState<string>('');
   const isEditMode = !!editingTask;
 
   // Load available skills
@@ -47,6 +50,23 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
     });
 
     return unsubscribe;
+  }, []);
+
+  // Load users for assignment
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const allUsers = await firebaseCache.getCachedCollection<User>('users', {
+          where: [['isApproved', '==', true]]
+        });
+        
+        setUsers(allUsers.filter(u => !u.isAdmin)); // Only approved non-admin users
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+
+    fetchUsers();
   }, []);
 
   // Populate form with editing data
@@ -143,27 +163,54 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
         // Create new task
         const taskId = await generateTaskId();
         
+        // Handle direct assignment
+        const assignedUser = assignToUser ? users.find(u => u.uid === assignToUser) : null;
+        const isDirectlyAssigned = !!assignedUser;
+        
         const newTask = {
           name: formData.name,
           description: formData.description,
           amount: parseFloat(formData.amount),
           deadline: new Date(formData.deadline),
           skills: formData.skills,
-          status: TaskStatus.NOT_STARTED,
+          status: isDirectlyAssigned ? TaskStatus.IN_PROGRESS : TaskStatus.NOT_STARTED,
           paymentStatus: TaskPaymentStatus.NOT_STARTED,
           createdBy: user.uid,
           createdByName: user.fullname,
           createdAt: Timestamp.fromDate(now),
-          assignedTo: null,
-          assignedToName: null,
-          assignedToStaffId: null
+          assignedTo: assignedUser ? assignedUser.uid : null,
+          assignedToName: assignedUser ? assignedUser.fullname : null,
+          assignedToStaffId: assignedUser ? assignedUser.staffId : null,
+          assignedAt: isDirectlyAssigned ? Timestamp.fromDate(now) : null,
+          startDate: isDirectlyAssigned ? Timestamp.fromDate(now) : null
         };
 
         // Use the generated taskId as the document ID
         await setDoc(doc(db, 'tasks', taskId), newTask);
 
-        // Send notifications based on type
-        if (sendNotification) {
+        // Send notifications based on assignment type
+        if (isDirectlyAssigned && assignedUser) {
+          // If directly assigned, only notify the assigned user
+          try {
+            const userQuery = query(collection(db, 'users'), where('uid', '==', assignedUser.uid));
+            const userSnapshot = await getDocs(userQuery);
+            const userDoc = userSnapshot.docs[0];
+            const userEmail = userDoc ? userDoc.data().email : null;
+            
+            if (userEmail) {
+              await notificationService.notifyTaskAssigned(
+                assignedUser.uid,
+                userEmail,
+                formData.name,
+                new Date(formData.deadline).toLocaleDateString('ms-MY'),
+                taskId
+              );
+            }
+          } catch (notificationError) {
+            console.warn('Failed to send assignment notification:', notificationError);
+          }
+        } else if (sendNotification) {
+          // If not directly assigned, send notifications based on type
           try {
             let targetUsers: {userId: string; email: string}[] = [];
 
@@ -352,6 +399,29 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
             </div>
 
             {!isEditMode && (
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Tugaskan Kepada Pengguna (Pilihan)
+                </label>
+                <select
+                  value={assignToUser}
+                  onChange={(e) => setAssignToUser(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Tidak tugaskan - biarkan terbuka untuk diambil</option>
+                  {users.map(user => (
+                    <option key={user.uid} value={user.uid}>
+                      {user.fullname} ({user.staffId}) - {user.employmentType}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Jika ditugaskan terus, hanya pengguna yang ditugaskan akan menerima pemberitahuan
+                </p>
+              </div>
+            )}
+
+            {!isEditMode && !assignToUser && (
               <div className="space-y-3 p-3 bg-gray-50 rounded-md">
                 <div className="flex items-center space-x-2">
                   <input
