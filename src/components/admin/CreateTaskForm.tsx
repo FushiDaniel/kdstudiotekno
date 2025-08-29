@@ -164,10 +164,7 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
         const taskId = await generateTaskId();
         
         // Handle direct assignment
-        console.log('assignToUser:', assignToUser);
-        console.log('users staffIds:', users.map(u => ({ staffId: u.staffId, uid: u.uid, fullname: u.fullname })));
         const assignedUser = assignToUser ? users.find(u => u.staffId === assignToUser) : null;
-        console.log('assignedUser found:', assignedUser);
         const isDirectlyAssigned = !!assignedUser;
         
         const newTask = {
@@ -182,7 +179,7 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
           createdByName: user.fullname,
           createdAt: Timestamp.fromDate(now),
           ...(isDirectlyAssigned && assignedUser ? {
-            assignedTo: assignedUser.uid || assignedUser.id,
+            assignedTo: assignedUser.uid || (assignedUser as any).id,
             assignedToName: assignedUser.fullname,
             assignedToStaffId: assignedUser.staffId,
             assignedAt: Timestamp.fromDate(now),
@@ -196,29 +193,22 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
           })
         };
 
-        console.log('About to create task with data:', newTask);
-        
         // Use the generated taskId as the document ID
         await setDoc(doc(db, 'tasks', taskId), newTask);
-        
-        console.log('Task created successfully, now sending notifications...');
 
         // Send notifications based on assignment type
         if (isDirectlyAssigned && assignedUser) {
           // If directly assigned, only notify the assigned user
           try {
-            console.log('Sending notification to assigned user:', assignedUser);
-            // Temporarily disable notification to test task creation
             if (assignedUser.email) {
               await notificationService.notifyTaskAssigned(
-                assignedUser.uid || assignedUser.id,
+                assignedUser.uid || (assignedUser as any).id,
                 assignedUser.email,
                 formData.name,
                 new Date(formData.deadline).toLocaleDateString('ms-MY'),
                 taskId
               );
             }
-            console.log('Notification skipped for testing');
           } catch (notificationError) {
             console.warn('Failed to send assignment notification:', notificationError);
           }
