@@ -9,7 +9,7 @@ import { Task, TaskStatus } from '@/types';
 import { collection, query, where, onSnapshot, doc, updateDoc, Timestamp, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { firebaseCache } from '@/lib/firebase-cache';
-import { formatCurrency, formatDate, formatMessageWithLinks } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime, formatMessageWithLinks } from '@/lib/utils';
 import { Clock, DollarSign, FileText, CheckCircle } from 'lucide-react';
 import TaskDetailView from './TaskDetailView';
 import Swal from 'sweetalert2';

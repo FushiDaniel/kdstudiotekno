@@ -9,7 +9,7 @@ import { Task, TaskStatus, TaskPaymentStatus, TaskMessage, User } from '@/types'
 import { collection, query, onSnapshot, doc, updateDoc, where, addDoc, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { firebaseCache } from '@/lib/firebase-cache';
-import { formatCurrency, formatDate, formatMessageWithLinks } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime, formatMessageWithLinks } from '@/lib/utils';
 import { Plus, Search, DollarSign, Clock, Users, X, CheckCircle, FileText, MessageCircle, Send, UserPlus, Edit, Trash2 } from 'lucide-react';
 import CreateTaskForm from './CreateTaskForm';
 import { Timestamp } from 'firebase/firestore';

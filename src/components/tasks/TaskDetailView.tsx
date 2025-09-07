@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Task, TaskStatus, TaskMessage } from '@/types';
 import { doc, updateDoc, Timestamp, collection, query, where, onSnapshot, addDoc, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { formatCurrency, formatDate, formatMessageWithLinks } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime, formatMessageWithLinks } from '@/lib/utils';
 import { notificationService } from '@/lib/notifications';
 import { ArrowLeft, Send, MessageCircle, Users } from 'lucide-react';
 

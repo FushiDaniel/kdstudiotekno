@@ -18,7 +18,7 @@ import {
 import { Task, TaskStatus, TaskPaymentStatus } from '@/types';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 
 export default function Dashboard() {
   const { user } = useAuth();
