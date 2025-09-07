@@ -642,7 +642,7 @@ export default function AdminTaskView() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Tarikh Akhir</h3>
-                  <p className="text-gray-700">{formatDate(selectedTask.deadline)}</p>
+                  <p className="text-gray-700">{formatDateTime(selectedTask.deadline)}</p>
                 </div>
               </div>
 
@@ -941,7 +941,7 @@ function AdminTaskCard({ task, onViewDetail, onAssignTask, onEditTask, onDeleteT
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-4">
           <div className="flex items-center">
             <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-            <span className="truncate">Deadline: {formatDate(task.deadline)}</span>
+            <span className="truncate">Deadline: {formatDateTime(task.deadline)}</span>
           </div>
           <div className="flex items-center">
             <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />

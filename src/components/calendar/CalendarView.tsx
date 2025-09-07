@@ -26,6 +26,7 @@ const localizer = momentLocalizer(moment);
 
 export default function CalendarView() {
   const { user } = useAuth();
+  const googleCalendarEmbedUrl = process.env.NEXT_PUBLIC_GOOGLE_CALENDAR_EMBED_URL;
   const [tasks, setTasks] = useState<Task[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
   const [currentView, setCurrentView] = useState<View>('month');
@@ -341,10 +342,10 @@ export default function CalendarView() {
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Kalendar & Gantt Chart</h1>
-            <p className="text-gray-600">Lihat tugasan dan acara dalam kalendar</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Kalendar</h1>
+            <p className="text-gray-600">Integrasi Google Calendar</p>
           </div>
-          {user?.isAdmin && (
+          {user?.isAdmin && !googleCalendarEmbedUrl && (
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Tambah Acara
@@ -352,7 +353,8 @@ export default function CalendarView() {
           )}
         </div>
 
-        {/* Calendar Stats */}
+        {/* Calendar Stats (hidden when using Google embed) */}
+        {!googleCalendarEmbedUrl && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
           <Card>
             <CardContent className="p-4">
@@ -403,47 +405,62 @@ export default function CalendarView() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div>)
       </div>
 
-      {/* Calendar Component */}
-      <Card>
-        <CardContent className="p-6">
-          <div style={{ height: '600px' }}>
-            <Calendar
-              localizer={localizer}
-              events={calendarData}
-              startAccessor="start"
-              endAccessor="end"
-              view={currentView}
-              onView={setCurrentView}
-              date={currentDate}
-              onNavigate={setCurrentDate}
-              onSelectEvent={handleEventSelect}
-              eventPropGetter={eventStyleGetter}
-              popup
-              views={['month', 'week', 'day', 'agenda']}
-              messages={{
-                next: "Berikut",
-                previous: "Sebelum",
-                today: "Hari Ini",
-                month: "Bulan",
-                week: "Minggu", 
-                day: "Hari",
-                agenda: "Agenda",
-                date: "Tarikh",
-                time: "Masa",
-                event: "Acara",
-                noEventsInRange: "Tiada acara dalam tempoh ini",
-                showMore: total => `+${total} lagi`
-              }}
+      {/* Google Calendar Embed or Local Calendar */}
+      {googleCalendarEmbedUrl ? (
+        <Card>
+          <CardContent className="p-0">
+            <iframe
+              src={googleCalendarEmbedUrl}
+              style={{ border: 0 }}
+              width="100%"
+              height="800"
+              frameBorder="0"
+              scrolling="no"
             />
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-6">
+            <div style={{ height: '600px' }}>
+              <Calendar
+                localizer={localizer}
+                events={calendarData}
+                startAccessor="start"
+                endAccessor="end"
+                view={currentView}
+                onView={setCurrentView}
+                date={currentDate}
+                onNavigate={setCurrentDate}
+                onSelectEvent={handleEventSelect}
+                eventPropGetter={eventStyleGetter}
+                popup
+                views={['month', 'week', 'day', 'agenda']}
+                messages={{
+                  next: "Berikut",
+                  previous: "Sebelum",
+                  today: "Hari Ini",
+                  month: "Bulan",
+                  week: "Minggu", 
+                  day: "Hari",
+                  agenda: "Agenda",
+                  date: "Tarikh",
+                  time: "Masa",
+                  event: "Acara",
+                  noEventsInRange: "Tiada acara dalam tempoh ini",
+                  showMore: total => `+${total} lagi`
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Event Detail Modal */}
-      {selectedEvent && (
+      {!googleCalendarEmbedUrl && selectedEvent && (
         <EventDetailModal
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
@@ -451,7 +468,7 @@ export default function CalendarView() {
       )}
 
       {/* Create Event Modal */}
-      {showCreateModal && user?.isAdmin && (
+      {!googleCalendarEmbedUrl && showCreateModal && user?.isAdmin && (
         <CreateEventModal
           onClose={() => setShowCreateModal(false)}
           onCreate={handleCreateEvent}

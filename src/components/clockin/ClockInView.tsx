@@ -283,6 +283,39 @@ export default function ClockInView() {
     return `${hours}j ${mins}m`;
   };
 
+  // Additional summaries: week and month
+  const isSameWeek = (date: string) => {
+    const d = new Date(date);
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0,0,0,0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+    return d >= startOfWeek && d < endOfWeek;
+  };
+
+  const isSameMonth = (date: string) => {
+    const d = new Date(date);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  };
+
+  const getWeekTotalMinutes = () => {
+    return clockInRecords
+      .filter(record => record.totalMinutes && isSameWeek(record.date))
+      .reduce((total, record) => total + (record.totalMinutes || 0), 0);
+  };
+
+  const getMonthTotalMinutes = () => {
+    return clockInRecords
+      .filter(record => record.totalMinutes && isSameMonth(record.date))
+      .reduce((total, record) => total + (record.totalMinutes || 0), 0);
+  };
+
+  const getWeekSessions = () => clockInRecords.filter(r => isSameWeek(r.date)).length;
+  const getMonthSessions = () => clockInRecords.filter(r => isSameMonth(r.date)).length;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -293,16 +326,26 @@ export default function ClockInView() {
 
   const renderClockInContent = () => (
     <>
-      {/* Today's Sessions */}
+      {/* Summaries */}
       <Card className="mb-6">
         <CardContent className="p-4">
-          <h2 className="text-lg font-semibold mb-2">Sesi Hari Ini</h2>
-          <div className="text-4xl font-bold text-gray-900">
-            {getTodayTotalMinutes() > 0 ? formatDuration(getTodayTotalMinutes()) : '0j 0m'}
-          </div>
-          <div className="flex justify-between text-sm text-gray-600 mt-2">
-            <span>Sesi: {clockInRecords.filter(r => r.date === getLocalDateString()).length}/2</span>
-            <span>Had: 5j 0m</span>
+          <h2 className="text-lg font-semibold mb-2">Ringkasan</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-3 bg-gray-50 rounded-lg border">
+              <div className="text-sm text-gray-600">Hari Ini</div>
+              <div className="text-2xl font-bold text-gray-900">{formatDuration(getTodayTotalMinutes())}</div>
+              <div className="text-xs text-gray-500 mt-1">Sesi: {clockInRecords.filter(r => r.date === getLocalDateString()).length}/2</div>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-lg border">
+              <div className="text-sm text-gray-600">Minggu Ini</div>
+              <div className="text-2xl font-bold text-gray-900">{formatDuration(getWeekTotalMinutes())}</div>
+              <div className="text-xs text-gray-500 mt-1">Sesi: {getWeekSessions()}</div>
+            </div>
+            <div className="p-3 bg-gray-50 rounded-lg border">
+              <div className="text-sm text-gray-600">Bulan Ini</div>
+              <div className="text-2xl font-bold text-gray-900">{formatDuration(getMonthTotalMinutes())}</div>
+              <div className="text-xs text-gray-500 mt-1">Sesi: {getMonthSessions()}</div>
+            </div>
           </div>
         </CardContent>
       </Card>

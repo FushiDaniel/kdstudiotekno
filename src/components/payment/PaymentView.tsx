@@ -547,7 +547,7 @@ function PaymentTaskCard({ task, showUserInfo = false }: PaymentTaskCardProps) {
           </div>
           <div className="flex items-center">
             <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-2 flex-shrink-0" />
-            <span className="truncate">Deadline: {formatDate(task.deadline)}</span>
+            <span className="truncate">Deadline: {formatDateTime(task.deadline)}</span>
           </div>
         </div>
 

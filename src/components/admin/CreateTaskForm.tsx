@@ -32,7 +32,7 @@ export default function CreateTaskForm({ onClose, onTaskCreated, editingTask }: 
   const [selectedSkillId, setSelectedSkillId] = useState<string>('');
   const [showSkillDropdown, setShowSkillDropdown] = useState(false);
   const [notificationType, setNotificationType] = useState<'all' | 'skilled'>('all');
-  const [sendNotification, setSendNotification] = useState(true);
+  const [sendNotification, setSendNotification] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [assignToUser, setAssignToUser] = useState<string>('');
   const isEditMode = !!editingTask;

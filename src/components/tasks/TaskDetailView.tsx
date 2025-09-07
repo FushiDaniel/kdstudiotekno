@@ -179,8 +179,11 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
   };
 
   const canSubmitTask = () => {
-    if (!user || !task.assignedTo) return false;
-    if (user.uid !== task.assignedTo) return false;
+    if (!user) return false;
+    // Allow if assigned by UID or, as a fallback, by Staff ID
+    const isAssignee = (task.assignedTo && user.uid === task.assignedTo) ||
+                       (task.assignedToStaffId && user.staffId === task.assignedToStaffId);
+    if (!isAssignee) return false;
     return task.status === TaskStatus.IN_PROGRESS || task.status === TaskStatus.NEEDS_REVISION;
   };
 
@@ -320,7 +323,7 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Tarikh Akhir</h3>
-              <p className="text-gray-700 text-xl">{formatDate(task.deadline)}</p>
+              <p className="text-gray-700 text-xl">{formatDateTime(task.deadline)}</p>
             </div>
           </div>
 
