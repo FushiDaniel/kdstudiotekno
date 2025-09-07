@@ -160,7 +160,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             phoneNumber: '',
             bio: '',
             skills: [],
-            availabilityStatus: AvailabilityStatus.DALAM_TALIAN,
+            availabilityStatus: AvailabilityStatus.IDLE,
             employmentType: EmploymentType.FREELANCE,
             staffId: `FL${firebaseUser.uid.slice(-3)}`,
             bankName: '',
@@ -186,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     const result = await signInWithEmailAndPassword(auth, email, password);
     
-    // Update user's availability status
+    // Ensure base fields exist without updating online status
     if (result.user) {
       const defaultEmploymentType = EmploymentType.FREELANCE;
       const staffId = `${defaultEmploymentType}${result.user.uid.slice(-3)}`;
@@ -194,7 +194,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await updateDoc(doc(db, 'users', result.user.uid), {
         employmentType: defaultEmploymentType,
         staffId: staffId,
-        availabilityStatus: AvailabilityStatus.DALAM_TALIAN,
         updatedAt: Timestamp.fromDate(new Date())
       });
     }
@@ -208,7 +207,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const staffId = `${defaultEmploymentType}${user.uid.slice(-3)}`;
     
     if (!userDoc.exists()) {
-      // Create new user document
+      // Create new user document (without online status field)
       const userData = {
         fullname: user.displayName || '',
         email: user.email || '',
@@ -218,7 +217,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         phoneNumber: '',
         bio: '',
         skills: [],
-        availabilityStatus: AvailabilityStatus.DALAM_TALIAN,
         employmentType: defaultEmploymentType,
         staffId: staffId,
         bankName: '',
@@ -226,13 +224,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         homeAddress: '',
         createdAt: Timestamp.fromDate(new Date()),
         updatedAt: Timestamp.fromDate(new Date())
-      };
+      } as const;
       
       await setDoc(doc(db, 'users', user.uid), userData);
     } else {
-      // Update existing user's availability status
+      // Update timestamp only; no online status updates
       await updateDoc(doc(db, 'users', user.uid), {
-        availabilityStatus: AvailabilityStatus.DALAM_TALIAN,
         updatedAt: Timestamp.fromDate(new Date())
       });
     }
@@ -301,7 +298,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         phoneNumber: '',
         bio: '',
         skills: [],
-        availabilityStatus: AvailabilityStatus.DALAM_TALIAN,
         employmentType: defaultEmploymentType,
         staffId: staffId,
         bankName: '',
@@ -309,7 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         homeAddress: '',
         createdAt: Timestamp.fromDate(new Date()),
         updatedAt: Timestamp.fromDate(new Date())
-      };
+      } as const;
       
       await setDoc(doc(db, 'users', result.user.uid), userData);
     }

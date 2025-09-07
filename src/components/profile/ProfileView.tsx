@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { AvailabilityStatus, UserSkill } from '@/types';
+import { UserSkill } from '@/types';
 import { 
   Mail, 
   Phone, 
@@ -35,46 +35,7 @@ export default function ProfileView() {
   });
   const [saving, setSaving] = useState(false);
 
-  const handleStatusChange = async (newStatus: AvailabilityStatus) => {
-    try {
-      await updateUser({ availabilityStatus: newStatus });
-      // Refresh current page to update status
-      window.location.href = window.location.href;
-    } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Gagal mengemas kini status. Sila cuba lagi.');
-    }
-  };
-
-  const getStatusColor = (status: AvailabilityStatus) => {
-    switch (status) {
-      case AvailabilityStatus.DALAM_TALIAN:
-        return 'bg-green-100 text-green-800';
-      case AvailabilityStatus.WORKING:
-        return 'bg-blue-100 text-blue-800';
-      case AvailabilityStatus.BREAK:
-        return 'bg-yellow-100 text-yellow-800';
-      case AvailabilityStatus.TIDAK_AKTIF:
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusText = (status: AvailabilityStatus) => {
-    switch (status) {
-      case AvailabilityStatus.DALAM_TALIAN:
-        return 'Dalam Talian';
-      case AvailabilityStatus.WORKING:
-        return 'Sedang Bekerja';
-      case AvailabilityStatus.BREAK:
-        return 'Rehat';
-      case AvailabilityStatus.TIDAK_AKTIF:
-        return 'Tidak Aktif';
-      default:
-        return 'Tidak Diketahui';
-    }
-  };
+  // Online status feature removed
 
   const handleSave = async () => {
     setSaving(true);
@@ -159,20 +120,7 @@ export default function ProfileView() {
                 {user?.employmentType}
               </Badge>
               
-              {/* Status Dropdown */}
-              <div className="mb-4">
-                <label className="block text-xs text-gray-600 mb-1">Status</label>
-                <select
-                  value={user?.availabilityStatus || AvailabilityStatus.TIDAK_AKTIF}
-                  onChange={(e) => handleStatusChange(e.target.value as AvailabilityStatus)}
-                  className={`w-full px-3 py-2 rounded-md text-sm font-medium border ${getStatusColor(user?.availabilityStatus || AvailabilityStatus.TIDAK_AKTIF)}`}
-                >
-                  <option value={AvailabilityStatus.DALAM_TALIAN}>Dalam Talian</option>
-                  <option value={AvailabilityStatus.WORKING}>Sedang Bekerja</option>
-                  <option value={AvailabilityStatus.BREAK}>Rehat</option>
-                  <option value={AvailabilityStatus.TIDAK_AKTIF}>Tidak Aktif</option>
-                </select>
-              </div>
+              {/* Online status controls removed */}
               
               {/* Notification Settings */}
               <Card className="mb-4">

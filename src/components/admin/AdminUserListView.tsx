@@ -11,39 +11,7 @@ import { Search, Users, Phone, Mail, MapPin, Clock, Building, CreditCard, Copy, 
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDate } from '@/lib/utils';
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'working':
-      return 'bg-blue-100 text-blue-800';
-    case 'break':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'idle':
-      return 'bg-gray-100 text-gray-800';
-    case 'dalam_talian':
-      return 'bg-green-100 text-green-800';
-    case 'tidak_aktif':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
-
-const getStatusText = (status: string) => {
-  switch (status) {
-    case 'working':
-      return 'Sdg Bekerja';
-    case 'break':
-      return 'Rehat';
-    case 'idle':
-      return 'Idle';
-    case 'dalam_talian':
-      return 'Dlm Talian';
-    case 'tidak_aktif':
-      return 'Tidak Aktif';
-    default:
-      return 'Tdk Diketahui';
-  }
-};
+// Online status feature removed
 
 const getEmploymentTypeBadge = (type: string) => {
   switch (type) {
@@ -289,9 +257,7 @@ function UserDetailCard({ user, onCopy }: UserDetailCardProps) {
               <Badge className={employmentBadge.color}>
                 {employmentBadge.text}
               </Badge>
-              <Badge className={getStatusColor(user.availabilityStatus)}>
-                {getStatusText(user.availabilityStatus)}
-              </Badge>
+              {/* Online status badge removed */}
               {user.isAdmin && (
                 <Badge className="bg-purple-100 text-purple-800 text-xs">
                   Admin

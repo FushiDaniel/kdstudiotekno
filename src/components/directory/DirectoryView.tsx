@@ -16,39 +16,7 @@ import SkillManagement from '@/components/admin/SkillManagement';
 import AdminUserListView from '@/components/admin/AdminUserListView';
 import RejectUserDialog from '@/components/admin/RejectUserDialog';
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'working':
-      return 'bg-blue-100 text-blue-800';
-    case 'break':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'idle':
-      return 'bg-gray-100 text-gray-800';
-    case 'dalam_talian':
-      return 'bg-green-100 text-green-800';
-    case 'tidak_aktif':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
-
-const getStatusText = (status: string) => {
-  switch (status) {
-    case 'working':
-      return 'Sdg Bekerja';
-    case 'break':
-      return 'Rehat';
-    case 'idle':
-      return 'Idle';
-    case 'dalam_talian':
-      return 'Dlm Talian';
-    case 'tidak_aktif':
-      return 'Tidak Aktif';
-    default:
-      return 'Tdk Diketahui';
-  }
-};
+// Online status feature removed
 
 export default function DirectoryView() {
   const [users, setUsers] = useState<User[]>([]);
@@ -394,7 +362,7 @@ export default function DirectoryView() {
 
       {/* Stats - Only show for directory tab */}
       {activeTab === 'directory' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mb-8">
           <Card className="border border-gray-200 bg-white">
             <CardContent className="p-4">
               <div className="flex items-center">
@@ -404,42 +372,6 @@ export default function DirectoryView() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Bilangan Staf</p>
                   <p className="text-2xl font-bold text-gray-900">{users.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-gray-200 bg-white">
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
-                  <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Dalam Talian</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {users.filter(u => u.availabilityStatus === 'dalam_talian').length}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-gray-200 bg-white">
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-gray-500 rounded-lg flex items-center justify-center mr-3">
-                  <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Tidak Aktif</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {users.filter(u => u.availabilityStatus === 'tidak_aktif').length}
-                  </p>
                 </div>
               </div>
             </CardContent>
@@ -515,13 +447,7 @@ export default function DirectoryView() {
                       </span>
                     </div>
                   )}
-                  <Badge 
-                    className={`absolute -bottom-2 right-0 ${
-                      getStatusColor(selectedUser.availabilityStatus)
-                    }`}
-                  >
-                    {getStatusText(selectedUser.availabilityStatus)}
-                  </Badge>
+                  {/* Online status badge removed */}
                 </div>
 
                 {/* Basic Info */}
@@ -750,9 +676,7 @@ function UserCard({ user, userSkills, onClick, showDetails }: UserCardProps) {
               <Badge className={`${getEmploymentTypeBadge(user.employmentType).color} text-xs`} variant="secondary">
                 {getEmploymentTypeBadge(user.employmentType).text}
               </Badge>
-              <Badge className={`${getStatusColor(user.availabilityStatus)} text-xs`} variant="secondary">
-                {getStatusText(user.availabilityStatus)}
-              </Badge>
+              {/* Online status badge removed */}
             </div>
           </div>
         </div>
