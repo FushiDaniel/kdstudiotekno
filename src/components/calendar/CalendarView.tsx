@@ -405,7 +405,7 @@ export default function CalendarView() {
               </div>
             </CardContent>
           </Card>
-        </div>)
+        </div>)}
       </div>
 
       {/* Google Calendar Embed or Local Calendar */}
