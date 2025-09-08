@@ -194,9 +194,10 @@ export default function AdminTaskView() {
     try {
       const now = new Date();
       const finalAmount = adjustedAmount !== null ? adjustedAmount : selectedTask.amount;
+      const defaultFeedback = 'Sila semak komen admin.';
       const updates = {
         status,
-        adminFeedback: feedbackNote,
+        adminFeedback: status === TaskStatus.NEEDS_REVISION ? (feedbackNote || defaultFeedback) : feedbackNote,
         amount: finalAmount,
         originalAmount: selectedTask.amount,
         reviewedAt: Timestamp.fromDate(now),
@@ -672,6 +673,15 @@ export default function AdminTaskView() {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Nota Penyerahan</h3>
                   <div className="text-gray-700">{formatMessageWithLinks(selectedTask.submissionNotes)}</div>
+                </div>
+              )}
+
+              {selectedTask.status === TaskStatus.NEEDS_REVISION && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-red-800 mb-2">Maklum Balas Pembetulan</h3>
+                  <div className="text-red-700">
+                    {formatMessageWithLinks(selectedTask.adminFeedback || 'Sila semak komen admin.')}
+                  </div>
                 </div>
               )}
 

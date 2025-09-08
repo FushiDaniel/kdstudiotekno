@@ -783,13 +783,13 @@ function PaymentTaskCard({ task, users, onApprove, onDeny, isProcessing, getPaym
           )}
         </div>
 
-        {task.adminFeedback && (
+        {(task.status === TaskStatus.NEEDS_REVISION) && (
           <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
             <div className="flex items-start">
               <FileText className="h-4 w-4 text-gray-500 mr-2 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-gray-700">Maklum Balas Admin:</p>
-                <p className="text-sm text-gray-600">{task.adminFeedback}</p>
+                <p className="text-sm text-gray-600">{task.adminFeedback || 'Sila semak komen admin.'}</p>
               </div>
             </div>
           </div>

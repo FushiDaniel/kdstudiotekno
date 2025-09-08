@@ -55,6 +55,30 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
     return () => unsubscribe();
   }, [task.id]);
 
+  // Keep task details in sync if updated in Firestore (e.g., admin feedback/status)
+  useEffect(() => {
+    if (!task.id || !onUpdate) return;
+
+    const taskDocRef = doc(db, 'tasks', task.id);
+    const unsubscribe = onSnapshot(taskDocRef, (snap) => {
+      if (!snap.exists()) return;
+      const data: any = { id: snap.id, ...snap.data() };
+      // Convert known timestamp fields to Date
+      const dateFields = [
+        'createdAt', 'updatedAt', 'deadline', 'assignedAt', 'startDate',
+        'completedAt', 'submittedAt', 'reviewedAt'
+      ];
+      dateFields.forEach((field) => {
+        if (data[field]?.toDate) {
+          data[field] = data[field].toDate();
+        }
+      });
+      onUpdate(data as Task);
+    });
+
+    return () => unsubscribe();
+  }, [task.id, onUpdate]);
+
   const handleSendMessage = async () => {
     if (!user || !newMessage.trim()) return;
 
@@ -300,10 +324,10 @@ export default function TaskDetailView({ task, onBack, onUpdate }: TaskDetailVie
             </Badge>
           </div>
 
-          {task.status === TaskStatus.NEEDS_REVISION && task.adminFeedback && (
+          {task.status === TaskStatus.NEEDS_REVISION && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <h3 className="text-lg font-semibold text-red-800 mb-2">Maklum Balas Pembetulan</h3>
-              <div className="text-red-700">{formatMessageWithLinks(task.adminFeedback)}</div>
+              <div className="text-red-700">{formatMessageWithLinks(task.adminFeedback || 'Sila semak komen admin.')}</div>
             </div>
           )}
 
