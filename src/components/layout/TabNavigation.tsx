@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { 
   Inbox, 
   ListChecks, 
-  Clock, 
   CreditCard, 
   User, 
   Users,
@@ -20,7 +19,6 @@ import Dashboard from '@/components/dashboard/Dashboard';
 import TaskView from '@/components/tasks/TaskView';
 import AdminTaskView from '@/components/admin/AdminTaskView';
 import AdminPaymentView from '@/components/admin/AdminPaymentView';
-import ClockInView from '@/components/clockin/ClockInView';
 import PaymentView from '@/components/payment/PaymentView';
 import ProfileView from '@/components/profile/ProfileView';
 import NotificationView from '@/components/notifications/NotificationView';
@@ -54,20 +52,13 @@ export default function TabNavigation() {
     { id: 'dashboard', label: 'Dashboard', icon: Inbox },
     { id: 'tasks', label: 'Tugasan', icon: ListChecks },
     { id: 'calendar', label: 'Kalendar', icon: Calendar },
-    { id: 'clockin', label: 'Clock In', icon: Clock },
     { id: 'payment', label: 'Bayaran', icon: CreditCard },
     { id: 'directory', label: 'Direktori', icon: Users },
     { id: 'profile', label: 'Profil', icon: User, badge: isProfileIncomplete },
   ];
 
   // Filter tabs based on user type
-  const tabs = allTabs.filter(tab => {
-    if (tab.id === 'clockin') {
-      // Only show clock in for PT (Part Time) and FT (Full Time) employees
-      return user?.staffId?.startsWith('PT') || user?.staffId?.startsWith('FT');
-    }
-    return true;
-  });
+  const tabs = allTabs;
 
   const renderContent = () => {
     switch (activeTab) {
@@ -77,8 +68,6 @@ export default function TabNavigation() {
         return (user?.isAdmin || user?.staffId?.startsWith('PT')) ? <AdminTaskView /> : <TaskView />;
       case 'calendar':
         return <CalendarView />;
-      case 'clockin':
-        return <ClockInView />;
       case 'payment':
         return user?.isAdmin ? <AdminPaymentView /> : <PaymentView />;
       case 'directory':
